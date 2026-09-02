@@ -42,6 +42,8 @@ object HistoryJson {
     const val FORMAT_VERSION = 1
 
     fun export(fasts: List<Fast>, nowMillis: Long): String = json.encodeToString(
+        // Explicit serializer: the reified overload cannot see a private type.
+        Backup.serializer(),
         Backup(
             exportedAt = nowMillis,
             fasts = fasts.sortedBy { it.startMillis }.map { it.toDto() },
@@ -55,7 +57,7 @@ object HistoryJson {
      * whatever currently occupies those rows.
      */
     fun import(text: String): List<Fast> =
-        json.decodeFromString<Backup>(text).fasts.map { it.toDomain() }
+        json.decodeFromString(Backup.serializer(), text).fasts.map { it.toDomain() }
 
     private fun Fast.toDto() = FastDto(
         id = id,

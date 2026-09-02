@@ -1,6 +1,7 @@
 package com.oleksandr.fastflow.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -13,6 +14,7 @@ import com.oleksandr.fastflow.R
  * Inter is bundled as a single variable font; each weight below is an instance
  * of its `wght` axis, which needs API 26+ — the app's minSdk.
  */
+@OptIn(ExperimentalTextApi::class)
 private fun interWeight(weight: Int) = Font(
     resId = R.font.inter_variable,
     weight = FontWeight(weight),
