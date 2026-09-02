@@ -3,6 +3,7 @@ package com.oleksandr.fastflow.ui.theme
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import com.oleksandr.fastflow.domain.model.ThemePalette
 
 /**
  * Every colour the app is allowed to draw with (SPEC 5.1).
@@ -12,7 +13,7 @@ import androidx.compose.ui.graphics.Color
  */
 @Immutable
 data class AppPalette(
-    val id: PaletteId,
+    val id: ThemePalette,
     val background: Color,
     val surface: Color,
     val surfaceVariant: Color,
@@ -51,14 +52,8 @@ data class AppPalette(
     }
 }
 
-/** Palette choice persisted in DataStore (SPEC 4.1). */
-enum class PaletteId {
-    MINT,
-    SYSTEM,
-}
-
 val MintPalette = AppPalette(
-    id = PaletteId.MINT,
+    id = ThemePalette.MINT,
     background = Color(0xFF0B0F14),
     surface = Color(0xFF131A22),
     surfaceVariant = Color(0xFF1B2430),
@@ -75,7 +70,7 @@ val MintPalette = AppPalette(
 )
 
 val SystemPalette = AppPalette(
-    id = PaletteId.SYSTEM,
+    id = ThemePalette.SYSTEM,
     background = Color(0xFF000000),
     surface = Color(0xFF1C1C1E),
     surfaceVariant = Color(0xFF2C2C2E),
@@ -91,9 +86,9 @@ val SystemPalette = AppPalette(
     textTertiary = Color(0xFF48484A),
 )
 
-fun paletteFor(id: PaletteId): AppPalette = when (id) {
-    PaletteId.MINT -> MintPalette
-    PaletteId.SYSTEM -> SystemPalette
+fun paletteFor(palette: ThemePalette): AppPalette = when (palette) {
+    ThemePalette.MINT -> MintPalette
+    ThemePalette.SYSTEM -> SystemPalette
 }
 
 val LocalAppPalette = staticCompositionLocalOf { MintPalette }

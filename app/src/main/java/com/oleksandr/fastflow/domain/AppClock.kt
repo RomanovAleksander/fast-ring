@@ -2,6 +2,8 @@ package com.oleksandr.fastflow.domain
 
 import java.time.LocalDate
 import java.time.ZoneId
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * The app's source of "now".
@@ -18,7 +20,8 @@ interface AppClock {
 }
 
 /** Production clock: the device's wall clock and current zone. */
-class SystemAppClock : AppClock {
+@Singleton
+class SystemAppClock @Inject constructor() : AppClock {
     override fun nowMillis(): Long = System.currentTimeMillis()
 
     override fun zone(): ZoneId = ZoneId.systemDefault()

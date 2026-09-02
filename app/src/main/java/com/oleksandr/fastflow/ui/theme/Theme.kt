@@ -10,6 +10,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.oleksandr.fastflow.domain.model.ThemePalette
 
 /**
  * The app theme.
@@ -20,11 +21,11 @@ import androidx.core.view.WindowCompat
  */
 @Composable
 fun FastFlowTheme(
-    paletteId: PaletteId = PaletteId.MINT,
+    palette: ThemePalette = ThemePalette.DEFAULT,
     content: @Composable () -> Unit,
 ) {
     Crossfade(
-        targetState = paletteFor(paletteId),
+        targetState = paletteFor(palette),
         animationSpec = tween(Motion.CROSSFADE_MILLIS),
         label = "palette",
     ) { palette ->
