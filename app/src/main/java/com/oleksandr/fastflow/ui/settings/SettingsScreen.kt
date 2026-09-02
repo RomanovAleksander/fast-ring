@@ -16,11 +16,15 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import java.util.Locale
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.oleksandr.fastflow.R
@@ -32,6 +36,7 @@ import com.oleksandr.fastflow.ui.components.GroupedDivider
 import com.oleksandr.fastflow.ui.components.GroupedRow
 import com.oleksandr.fastflow.ui.components.GroupedSection
 import com.oleksandr.fastflow.ui.components.MiniRing
+import com.oleksandr.fastflow.ui.plans.CustomPlanSheet
 import com.oleksandr.fastflow.ui.theme.AppTypography
 import com.oleksandr.fastflow.ui.theme.LocalAppPalette
 import com.oleksandr.fastflow.ui.theme.paletteFor
@@ -43,6 +48,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val palette = LocalAppPalette.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var showCustomPlan by remember { mutableStateOf(false) }
 
     val exportCsvLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv"),
@@ -104,6 +110,12 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                         onClick = { viewModel.setActivePlan(plan.id) },
                     )
                 }
+                GroupedDivider()
+                ChoiceRow(
+                    label = stringResource(R.string.plan_custom),
+                    value = "",
+                    onClick = { showCustomPlan = true },
+                )
             }
         }
 
@@ -126,10 +138,33 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     onClick = { viewModel.setEatingEndReminder(nextReminderChoice(state.settings)) },
                 )
                 GroupedDivider()
+                GroupedDivider()
+                ChoiceRow(
+                    label = stringResource(R.string.settings_daily_reminder),
+                    value = state.settings.dailyReminderMinuteOfDay
+                        ?.let { formatMinuteOfDay(it) }
+                        ?: stringResource(R.string.settings_off),
+                    onClick = {
+                        viewModel.setDailyReminder(nextDailyReminderChoice(state.settings))
+                    },
+                )
+                GroupedDivider()
                 ToggleRow(
                     label = stringResource(R.string.settings_milestones),
                     checked = state.settings.milestonesEnabled,
                     onChange = viewModel::setMilestones,
+                )
+                GroupedDivider()
+                ChoiceRow(
+                    label = stringResource(R.string.settings_time_format),
+                    value = when (state.settings.use24HourClock) {
+                        null -> stringResource(R.string.settings_time_format_system)
+                        true -> stringResource(R.string.settings_time_format_24)
+                        false -> stringResource(R.string.settings_time_format_12)
+                    },
+                    onClick = {
+                        viewModel.setUse24HourClock(nextClockChoice(state.settings.use24HourClock))
+                    },
                 )
             }
         }
@@ -190,7 +225,38 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             }
         }
     }
+
+    if (showCustomPlan) {
+        val active = state.activePlan
+        CustomPlanSheet(
+            initialFastingMinutes = active?.fastingMinutes ?: 16 * 60,
+            initialEatingMinutes = active?.eatingMinutes ?: 8 * 60,
+            onConfirm = { fasting, eating ->
+                showCustomPlan = false
+                scope.launch { viewModel.createCustomPlan(fasting, eating) }
+            },
+            onDismiss = { showCustomPlan = false },
+        )
+    }
 }
+
+/** Cycles 20:00 → 21:00 → 22:00 → off, keeping the row a single tap. */
+private fun nextDailyReminderChoice(settings: AppSettings): Int? {
+    val choices = listOf(20 * 60, 21 * 60, 22 * 60)
+    val current = settings.dailyReminderMinuteOfDay ?: return choices.first()
+    val index = choices.indexOf(current)
+    return if (index == -1 || index == choices.lastIndex) null else choices[index + 1]
+}
+
+/** System → 24h → 12h → system. */
+private fun nextClockChoice(current: Boolean?): Boolean? = when (current) {
+    null -> true
+    true -> false
+    false -> null
+}
+
+private fun formatMinuteOfDay(minuteOfDay: Int): String =
+    String.format(Locale.ROOT, "%02d:%02d", minuteOfDay / 60, minuteOfDay % 60)
 
 @Composable
 private fun PlanRow(plan: FastingPlan, selected: Boolean, onClick: () -> Unit) {
