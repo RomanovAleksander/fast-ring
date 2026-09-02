@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FastFlow</string>
+
+    <!-- Нижня навігація -->
+    <string name="tab_timer">Таймер</string>
+    <string name="tab_history">Історія</string>
+    <string name="tab_stats">Статистика</string>
+    <string name="tab_settings">Налаштування</string>
+
+    <!-- Заголовки екранів -->
+    <string name="screen_history_title">Історія</string>
+    <string name="screen_stats_title">Статистика</string>
+    <string name="screen_settings_title">Налаштування</string>
+
+    <!-- Стани головного екрана -->
+    <string name="state_fasting">ГОЛОДУВАННЯ</string>
+    <string name="state_eating">ВІКНО ЇЖІ</string>
+    <string name="state_idle">ГОТОВИЙ</string>
+
+    <!-- Заглушки фаз, які ще попереду -->
+    <string name="placeholder_history">Тут буде історія голодувань</string>
+    <string name="placeholder_stats">Тут буде статистика та календар</string>
+    <string name="placeholder_settings">Тут будуть налаштування</string>
+</resources>

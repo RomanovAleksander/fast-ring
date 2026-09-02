@@ -1,0 +1,74 @@
+name: Android
+
+on:
+  push:
+    branches:
+      - main
+      - claude/android-apk-app-e5v7lu
+  workflow_dispatch:
+
+# Needed to publish the built APK as a release asset.
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest --stacktrace
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Report APK size
+        run: ls -lh app/build/outputs/apk/debug/
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fastflow-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Upload unit test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: app/build/reports/tests/testDebugUnitTest
+          if-no-files-found: ignore
+
+      # A release asset gives one stable URL that downloads straight to a phone,
+      # unlike a workflow artifact (which is a zip behind a login).
+      - name: Publish APK to the dev-latest pre-release
+        if: github.ref_name == 'claude/android-apk-app-e5v7lu'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG=dev-latest
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --prerelease \
+              --target "$GITHUB_SHA" \
+              --title "FastFlow — свіжий debug-білд" \
+              --notes "APK останньої збірки. Встановлюється на телефон напряму."
+          fi
+          gh release upload "$TAG" \
+            app/build/outputs/apk/debug/app-debug.apk#fastflow-debug.apk --clobber
