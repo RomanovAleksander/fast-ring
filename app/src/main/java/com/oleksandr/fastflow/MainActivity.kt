@@ -6,6 +6,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.oleksandr.fastflow.ui.AppViewModel
 import com.oleksandr.fastflow.ui.FastFlowApp
 import com.oleksandr.fastflow.ui.theme.FastFlowTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -23,8 +27,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            FastFlowTheme {
-                FastFlowApp()
+            val appViewModel: AppViewModel = hiltViewModel()
+            val settings by appViewModel.settings.collectAsStateWithLifecycle()
+
+            // Switching palettes crossfades inside the theme (SPEC 3.5).
+            FastFlowTheme(palette = settings.palette) {
+                FastFlowApp(
+                    onboardingDone = settings.onboardingDone,
+                    onOnboardingComplete = appViewModel::completeOnboarding,
+                )
             }
         }
     }

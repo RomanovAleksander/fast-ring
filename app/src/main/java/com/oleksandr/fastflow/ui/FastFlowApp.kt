@@ -38,6 +38,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.oleksandr.fastflow.ui.history.HistoryScreen
 import com.oleksandr.fastflow.ui.home.HomeScreen
+import com.oleksandr.fastflow.ui.onboarding.OnboardingScreen
 import com.oleksandr.fastflow.ui.settings.SettingsScreen
 import com.oleksandr.fastflow.ui.stats.StatsScreen
 import com.oleksandr.fastflow.ui.theme.AppTypography
@@ -45,7 +46,18 @@ import com.oleksandr.fastflow.ui.theme.LocalAppPalette
 import com.oleksandr.fastflow.ui.theme.Motion
 
 @Composable
-fun FastFlowApp(navController: NavHostController = rememberNavController()) {
+fun FastFlowApp(
+    onboardingDone: Boolean = true,
+    onOnboardingComplete: () -> Unit = {},
+    navController: NavHostController = rememberNavController(),
+) {
+    // Permissions come first: without them the timer's notifications never
+    // arrive, which is the one thing the app cannot compromise on (SPEC 3.3).
+    if (!onboardingDone) {
+        OnboardingScreen(onFinish = onOnboardingComplete)
+        return
+    }
+
     val palette = LocalAppPalette.current
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
