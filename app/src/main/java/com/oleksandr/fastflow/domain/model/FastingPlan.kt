@@ -42,8 +42,8 @@ object FastingPlans {
         FastingPlan("p18_6", "18:6", 18 * 60, 6 * 60, isPreset = true, sortOrder = 3),
         FastingPlan("p20_4", "20:4", 20 * 60, 4 * 60, isPreset = true, sortOrder = 4),
         FastingPlan("omad", "OMAD 23:1", 23 * 60, 1 * 60, isPreset = true, sortOrder = 5),
-        FastingPlan("h36", "36 год", 36 * 60, null, isPreset = true, sortOrder = 6),
-        FastingPlan("h48", "48 год", 48 * 60, null, isPreset = true, sortOrder = 7),
+        FastingPlan("h36", "36h", 36 * 60, null, isPreset = true, sortOrder = 6),
+        FastingPlan("h48", "48h", 48 * 60, null, isPreset = true, sortOrder = 7),
     )
 
     val default: FastingPlan = presets.first { it.id == FastingPlan.DEFAULT_ID }
