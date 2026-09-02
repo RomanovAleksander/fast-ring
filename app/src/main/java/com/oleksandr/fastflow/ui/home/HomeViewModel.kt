@@ -3,12 +3,15 @@ package com.oleksandr.fastflow.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.oleksandr.fastflow.domain.AppClock
+import com.oleksandr.fastflow.domain.logic.FastScoring
 import com.oleksandr.fastflow.domain.model.AppSettings
 import com.oleksandr.fastflow.domain.model.DayInfo
 import com.oleksandr.fastflow.domain.model.FastState
 import com.oleksandr.fastflow.domain.model.Milestones
+import com.oleksandr.fastflow.domain.repository.FastRepository
 import com.oleksandr.fastflow.domain.repository.SettingsRepository
 import com.oleksandr.fastflow.domain.usecase.ComputeDayStatusesUseCase
+import com.oleksandr.fastflow.domain.usecase.EditFastUseCase
 import com.oleksandr.fastflow.domain.usecase.EndFastUseCase
 import com.oleksandr.fastflow.domain.usecase.ObserveCurrentStateUseCase
 import com.oleksandr.fastflow.domain.usecase.StartFastUseCase
@@ -33,6 +36,8 @@ class HomeViewModel @Inject constructor(
     settingsRepository: SettingsRepository,
     private val startFastUseCase: StartFastUseCase,
     private val endFastUseCase: EndFastUseCase,
+    private val editFastUseCase: EditFastUseCase,
+    private val fastRepository: FastRepository,
     private val clock: AppClock,
 ) : ViewModel() {
 
@@ -67,13 +72,25 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch { endFastUseCase(endMillis = endMillis) }
     }
 
+    /** Moves the running fast's start time ("I started at 20:00"). */
+    fun editStart(startMillis: Long) {
+        viewModelScope.launch {
+            val active = fastRepository.getActive() ?: return@launch
+            editFastUseCase(active.copy(startMillis = startMillis))
+        }
+    }
+
     private fun toUiState(
         state: FastState,
         week: List<DayInfo>,
         settings: AppSettings,
     ): HomeUiState {
         val now = clock.nowMillis()
-        val base = HomeUiState(week = week, use24HourClock = settings.use24HourClock)
+        val base = HomeUiState(
+            week = week,
+            use24HourClock = settings.use24HourClock,
+            nowMillis = now,
+        )
 
         return when (state) {
             FastState.Idle -> base.copy(
@@ -99,6 +116,10 @@ class HomeViewModel @Inject constructor(
                     showInnerRing = !state.plan.isExtended,
                     startMillis = state.fast.startMillis,
                     plannedEndMillis = state.fast.startMillis + target,
+                    // What stopping right now would cost, and how to win it back.
+                    stopEarlyDeadlineMillis = FastScoring.compensationDeadlineMillis(
+                        state.fast.copy(endMillis = now),
+                    ),
                 )
             }
 

@@ -36,6 +36,12 @@ data class HomeUiState(
     val creditDeadlineMillis: Long? = null,
     /** Overtime target the inner ring is filling towards. */
     val nextMilestoneMinutes: Int? = null,
+    /**
+     * If the fast were stopped now and fell short, the latest start time for
+     * the next one that would still earn the day (SPEC 3.4b).
+     */
+    val stopEarlyDeadlineMillis: Long? = null,
+    val nowMillis: Long = 0L,
 
     val week: List<DayInfo> = emptyList(),
     val use24HourClock: Boolean? = null,
@@ -46,5 +52,7 @@ data class HomeUiState(
     val completionPercent: Int
         get() = if (targetMillis <= 0L) 100 else ((elapsedMillis * 100) / targetMillis).toInt()
 
-    val canFinishEarly: Boolean get() = phase == HomePhase.FASTING
+    /** Below the 90 % threshold, so stopping needs a confirmation (SPEC 3.2). */
+    val needsStopConfirmation: Boolean
+        get() = phase == HomePhase.FASTING && elapsedMillis * 10 < targetMillis * 9
 }

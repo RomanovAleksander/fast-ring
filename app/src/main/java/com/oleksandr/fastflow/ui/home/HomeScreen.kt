@@ -9,11 +9,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -44,12 +48,49 @@ fun HomeScreen(
     onOpenDay: (LocalDate) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var showStopConfirmation by remember { mutableStateOf(false) }
+    var showStartEditor by remember { mutableStateOf(false) }
+
+    val zone = rememberZoneId()
+    val use24Hour = rememberUse24Hour(state.use24HourClock)
+
     HomeContent(
         state = state,
+        // Stopping short of the goal asks first; past 90 % it just stops.
+        onStop = { if (state.needsStopConfirmation) showStopConfirmation = true else viewModel.endFast() },
         onStart = { viewModel.startFast() },
-        onStop = { viewModel.endFast() },
+        onEditStart = { showStartEditor = true },
         onOpenDay = onOpenDay,
     )
+
+    if (showStopConfirmation) {
+        StopEarlySheet(
+            percent = state.completionPercent,
+            compensationDeadlineMillis = state.stopEarlyDeadlineMillis,
+            zone = zone,
+            use24Hour = use24Hour,
+            onConfirm = {
+                showStopConfirmation = false
+                viewModel.endFast()
+            },
+            onDismiss = { showStopConfirmation = false },
+        )
+    }
+
+    val editableStart = state.startMillis
+    if (showStartEditor && editableStart != null) {
+        EditStartSheet(
+            currentStartMillis = editableStart,
+            nowMillis = state.nowMillis,
+            zone = zone,
+            use24Hour = use24Hour,
+            onConfirm = { millis ->
+                showStartEditor = false
+                viewModel.editStart(millis)
+            },
+            onDismiss = { showStartEditor = false },
+        )
+    }
 }
 
 @Composable
@@ -57,6 +98,7 @@ private fun HomeContent(
     state: HomeUiState,
     onStart: () -> Unit,
     onStop: () -> Unit,
+    onEditStart: () -> Unit,
     onOpenDay: (LocalDate) -> Unit,
 ) {
     val palette = LocalAppPalette.current
@@ -121,6 +163,12 @@ private fun HomeContent(
                 ),
                 style = AppTypography.bodyMedium,
                 color = palette.textSecondary,
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    enabled = state.phase == HomePhase.FASTING || state.phase == HomePhase.OVERTIME,
+                    onClick = onEditStart,
+                ),
             )
         }
 

@@ -40,6 +40,8 @@
     <string name="home_credit_hint">почни до %1$s, щоб зарахувати день</string>
     <string name="home_window_range">%1$s → %2$s</string>
     <string name="home_edit_start">Змінити час початку</string>
+    <string name="edit_start_today">Сьогодні</string>
+    <string name="edit_start_yesterday">Учора</string>
     <string name="home_change_plan">Змінити план</string>
 
     <!-- Дострокове завершення -->
