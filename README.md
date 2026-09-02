@@ -25,7 +25,8 @@
 
 ## Release-підпис
 
-`assembleRelease` очікує `keystore.properties` у корені (у git не потрапляє):
+Якщо в корені лежить `keystore.properties` (у git не потрапляє), `assembleRelease`
+підпише APK; без нього реліз збереться непідписаним:
 
 ```properties
 storeFile=/абсолютний/шлях/fastflow.jks
