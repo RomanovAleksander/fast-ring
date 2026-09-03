@@ -175,6 +175,24 @@ class FastLifecycleTest {
         assertEquals(EndFastResult.NoActiveFast, h.end())
     }
 
+    /**
+     * Regression guard: the on-screen timer froze because the state stream was
+     * deduplicated. A second apart, the state really is equal, so any
+     * distinctUntilChanged over it swallows every tick.
+     */
+    @Test
+    fun `state is equal from one second to the next, so the stream must not dedup`() = runBlocking {
+        val h = harness()
+        h.start()
+
+        val first = state(h)
+        h.clock.advanceMinutes(0)
+        h.clock.now += 1_000
+        val second = state(h)
+
+        assertEquals("a running fast looks identical each tick", first, second)
+    }
+
     @Test
     fun `the fast freezes the plan numbers at start`() = runBlocking {
         val h = harness()

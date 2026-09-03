@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -72,7 +73,7 @@ fun FastFlowApp(
             IosTabBar(
                 tabs = TopLevelTab.entries,
                 isSelected = { tab ->
-                    currentDestination?.hasRoute(tab.route::class) == true
+                    currentDestination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true
                 },
                 onSelect = { tab -> navController.navigateToTab(tab) },
             )
@@ -96,6 +97,9 @@ fun FastFlowApp(
                     // Tapping a day in the week strip opens it in the calendar.
                     onOpenDay = { date ->
                         navController.navigate(StatsRoute(date.toEpochDay())) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
                             launchSingleTop = true
                         }
                     },
@@ -113,8 +117,15 @@ fun FastFlowApp(
 
 /** Switches tabs without stacking duplicates, keeping each tab's own state. */
 private fun NavHostController.navigateToTab(tab: TopLevelTab) {
+    val startId = graph.findStartDestination().id
     navigate(tab.route) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
+        popUpTo(startId) {
+            saveState = true
+            // The timer tab IS the start destination. Popping only down *to* it
+            // and then navigating to it again is a no-op, which is why tapping
+            // Timer did nothing and only system back worked.
+            inclusive = tab == TopLevelTab.TIMER
+        }
         launchSingleTop = true
         restoreState = true
     }
@@ -162,7 +173,9 @@ private fun IosTabBar(
                         .fillMaxSize()
                         .selectable(
                             selected = selected,
-                            onClick = { if (!selected) onSelect(tab) },
+                            // Always navigates: swallowing the tap on the
+                            // selected tab is what made the bar feel dead.
+                            onClick = { onSelect(tab) },
                             role = Role.Tab,
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,

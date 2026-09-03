@@ -9,7 +9,6 @@ import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 
 /**
@@ -37,12 +36,19 @@ class ObserveCurrentStateUseCase @Inject constructor(
             lastPlan = lastFinished?.let { fast -> plans.firstOrNull { it.id == fast.planId } },
             nowMillis = clock.nowMillis(),
         )
-    }.distinctUntilChanged()
+    }
+
+    // Deliberately NOT distinctUntilChanged: while a fast runs, the state is
+    // equal from one second to the next (same fast, same plan), so dedup would
+    // swallow every tick and the on-screen timer would freeze.
 
     private fun secondTicker(): Flow<Long> = flow {
         while (true) {
-            emit(clock.nowMillis())
-            delay(TICK_MILLIS)
+            val now = clock.nowMillis()
+            emit(now)
+            // Sleep to the next whole second so the display stays in step with
+            // the wall clock instead of drifting by the work done each tick.
+            delay(TICK_MILLIS - now % TICK_MILLIS)
         }
     }
 

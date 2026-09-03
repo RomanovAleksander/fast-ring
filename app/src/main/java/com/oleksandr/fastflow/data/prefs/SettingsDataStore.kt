@@ -34,13 +34,21 @@ class SettingsDataStore(private val context: Context) {
     /** Sentinel for "off", since a preferences key is either absent or set. */
     private companion object {
         const val OFF = -1
+        const val DEFAULT_EATING_END_REMINDER_MINUTES = 60
     }
 
     val settings: Flow<AppSettings> = context.preferencesStore.data.map { prefs ->
         AppSettings(
             activePlanId = prefs[Keys.ACTIVE_PLAN_ID] ?: FastingPlan.DEFAULT_ID,
             autoStartNextFast = prefs[Keys.AUTO_START_NEXT] ?: false,
-            eatingEndReminderMinutes = prefs[Keys.EATING_END_REMINDER]?.takeIf { it != OFF } ?: 60,
+            // Three distinct cases: never set (use the default), explicitly
+            // switched off, or a real value. Collapsing the first two made
+            // "off" read back as the default, so the row looked stuck.
+            eatingEndReminderMinutes = when (val stored = prefs[Keys.EATING_END_REMINDER]) {
+                null -> DEFAULT_EATING_END_REMINDER_MINUTES
+                OFF -> null
+                else -> stored
+            },
             dailyReminderMinuteOfDay = prefs[Keys.DAILY_REMINDER]?.takeIf { it != OFF },
             milestonesEnabled = prefs[Keys.MILESTONES] ?: true,
             palette = ThemePalette.fromName(prefs[Keys.PALETTE]),
