@@ -98,16 +98,24 @@ fun DualProgressRing(
     )
 
     // A faint highlight travels the track so the ring never looks frozen.
-    val shimmer = rememberInfiniteTransition(label = "shimmer")
-    val shimmerAngle by shimmer.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(Motion.SHIMMER_SWEEP_MILLIS, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "shimmerAngle",
-    )
+    // The transition is only *created* when animations are on: an infinite
+    // animation that merely goes undrawn still runs, which SPEC 5.2 forbids
+    // and which leaves the UI permanently non-idle.
+    val shimmerAngle: Float? = if (animationsEnabled) {
+        val shimmer = rememberInfiniteTransition(label = "shimmer")
+        val angle by shimmer.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(Motion.SHIMMER_SWEEP_MILLIS, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+            label = "shimmerAngle",
+        )
+        angle
+    } else {
+        null
+    }
 
     val innerFraction by animateFloatAsState(
         targetValue = if (showInnerRing) 1f else 0f,
@@ -130,7 +138,7 @@ fun DualProgressRing(
                 progress = animatedOuter,
                 color = animatedOuterColor,
                 gradientEnd = palette.fastingGradientEnd,
-                shimmerAngle = if (animationsEnabled) shimmerAngle else null,
+                shimmerAngle = shimmerAngle,
                 // The glow widens as the ring closes, so the moment reads.
                 glowScale = pulse.value,
             )

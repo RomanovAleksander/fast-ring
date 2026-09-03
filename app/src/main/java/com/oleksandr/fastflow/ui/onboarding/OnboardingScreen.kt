@@ -44,6 +44,7 @@ import com.oleksandr.fastflow.ui.components.DualProgressRing
 import com.oleksandr.fastflow.ui.theme.AppTypography
 import com.oleksandr.fastflow.ui.theme.LocalAppPalette
 import com.oleksandr.fastflow.ui.theme.Motion
+import com.oleksandr.fastflow.ui.theme.rememberAnimationsEnabled
 
 /**
  * Three-page introduction that also collects the permissions notifications
@@ -79,6 +80,7 @@ fun OnboardingScreen(onFinish: () -> Unit) {
             innerProgress = 0f,
             innerColor = palette.eating,
             showInnerRing = false,
+            animationsEnabled = rememberAnimationsEnabled(),
             diameter = 180.dp,
         ) {}
 

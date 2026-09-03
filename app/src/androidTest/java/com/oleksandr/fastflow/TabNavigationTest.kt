@@ -80,7 +80,7 @@ class TabNavigationTest {
         awaitText(R.string.stats_tab_overview)
 
         tapTab(R.string.tab_settings)
-        awaitText(R.string.settings_section_appearance)
+        awaitText(R.string.settings_export_csv)
 
         tapTab(R.string.tab_history)
         awaitText(R.string.history_empty)
@@ -89,9 +89,9 @@ class TabNavigationTest {
     @Test
     fun tappingTheAlreadySelectedTabKeepsItOnScreen() {
         tapTab(R.string.tab_settings)
-        awaitText(R.string.settings_section_appearance)
+        awaitText(R.string.settings_export_csv)
 
         tapTab(R.string.tab_settings)
-        awaitText(R.string.settings_section_appearance)
+        awaitText(R.string.settings_export_csv)
     }
 }
