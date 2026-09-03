@@ -104,12 +104,17 @@ jobs:
           arch: x86_64
           disable-animations: true
           script: |
+            # Capture the screenshot even when the tests fail: on a red run it
+            # is the most useful artifact there is.
+            set +e
             ./gradlew connectedDebugAndroidTest --stacktrace
+            TEST_EXIT=$?
             adb install -r app/build/outputs/apk/debug/app-debug.apk
             adb shell am start -n com.oleksandr.fastflow.debug/com.oleksandr.fastflow.MainActivity
             adb wait-for-device
             sleep 8
-            adb exec-out screencap -p > screenshot-onboarding.png
+            adb exec-out screencap -p > screenshot-home.png
+            exit $TEST_EXIT
 
       - name: Upload the screenshot
         if: always()

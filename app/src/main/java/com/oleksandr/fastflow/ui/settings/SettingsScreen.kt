@@ -232,9 +232,11 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     if (showEatingReminder) {
         OptionsDialog(
             title = stringResource(R.string.settings_eating_end_reminder),
-            options = AppSettings.EATING_REMINDER_CHOICES.map {
-                DialogOption(stringResource(R.string.settings_minutes_before, it), it)
-            } + DialogOption(stringResource(R.string.settings_off), null),
+            // Explicit type argument: DialogOption is invariant, so a list of
+            // DialogOption<Int> is not a list of DialogOption<Int?>.
+            options = AppSettings.EATING_REMINDER_CHOICES.map { minutes ->
+                DialogOption<Int?>(stringResource(R.string.settings_minutes_before, minutes), minutes)
+            } + DialogOption<Int?>(stringResource(R.string.settings_off), null),
             selected = state.settings.eatingEndReminderMinutes,
             onSelect = viewModel::setEatingEndReminder,
             onDismiss = { showEatingReminder = false },
@@ -262,9 +264,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         OptionsDialog(
             title = stringResource(R.string.settings_time_format),
             options = listOf(
-                DialogOption(stringResource(R.string.settings_time_format_system), null),
-                DialogOption(stringResource(R.string.settings_time_format_24), true),
-                DialogOption(stringResource(R.string.settings_time_format_12), false),
+                DialogOption<Boolean?>(stringResource(R.string.settings_time_format_system), null),
+                DialogOption<Boolean?>(stringResource(R.string.settings_time_format_24), true),
+                DialogOption<Boolean?>(stringResource(R.string.settings_time_format_12), false),
             ),
             selected = state.settings.use24HourClock,
             onSelect = viewModel::setUse24HourClock,

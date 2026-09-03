@@ -2,6 +2,7 @@ package com.oleksandr.fastflow
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -25,15 +26,24 @@ class TabNavigationTest {
 
     private fun text(id: Int) = composeRule.activity.getString(id)
 
+    private fun isShowing(id: Int): Boolean =
+        composeRule.onAllNodesWithText(text(id)).fetchSemanticsNodes().isNotEmpty()
+
     private fun tapTab(id: Int) {
         composeRule.onNodeWithText(text(id)).performClick()
         composeRule.waitForIdle()
     }
 
+    /**
+     * Onboarding is only shown until it is completed, and that flag outlives a
+     * single test, so this walks through it only when it is actually on screen.
+     */
     @Before
-    fun skipOnboarding() {
-        composeRule.onNodeWithText(text(R.string.action_next)).performClick()
-        composeRule.onNodeWithText(text(R.string.action_done)).performClick()
+    fun startFromHome() {
+        if (isShowing(R.string.action_next)) {
+            composeRule.onNodeWithText(text(R.string.action_next)).performClick()
+            composeRule.onNodeWithText(text(R.string.action_done)).performClick()
+        }
         composeRule.waitForIdle()
     }
 
@@ -43,8 +53,8 @@ class TabNavigationTest {
             tapTab(tab)
             tapTab(R.string.tab_timer)
 
-            // The start button only exists on Home.
-            composeRule.onNodeWithText(text(R.string.action_start)).assertIsDisplayed()
+            // The week-day strip only exists on Home.
+            composeRule.onNodeWithText(text(R.string.weekday_mon)).assertIsDisplayed()
         }
     }
 
