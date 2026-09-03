@@ -47,7 +47,9 @@ class LaunchSmokeTest {
         }
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText(text(R.string.tab_timer)).assertIsDisplayed()
-        composeRule.onNodeWithText(text(R.string.weekday_mon)).assertIsDisplayed()
+        // Home's content arrives from a Flow, so wait for it rather than
+        // assuming waitForIdle covers it.
+        composeRule.waitUntil(timeoutMillis = 5_000) { isShowing(R.string.action_start) }
+        composeRule.onNodeWithText(text(R.string.action_start)).assertIsDisplayed()
     }
 }

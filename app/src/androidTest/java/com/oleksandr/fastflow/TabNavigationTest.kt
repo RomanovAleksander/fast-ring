@@ -1,6 +1,10 @@
 package com.oleksandr.fastflow
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -29,9 +33,16 @@ class TabNavigationTest {
     private fun isShowing(id: Int): Boolean =
         composeRule.onAllNodesWithText(text(id)).fetchSemanticsNodes().isNotEmpty()
 
+    /** Screens carry the same words as their tabs, so match the tab by its role. */
     private fun tapTab(id: Int) {
-        composeRule.onNodeWithText(text(id)).performClick()
+        val isTab = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
+        composeRule.onNode(hasText(text(id)) and isTab).performClick()
         composeRule.waitForIdle()
+    }
+
+    /** Screen content arrives from a Flow, which outlives waitForIdle. */
+    private fun awaitText(id: Int) {
+        composeRule.waitUntil(timeoutMillis = 5_000) { isShowing(id) }
     }
 
     /**
@@ -53,30 +64,34 @@ class TabNavigationTest {
             tapTab(tab)
             tapTab(R.string.tab_timer)
 
-            // The week-day strip only exists on Home.
-            composeRule.onNodeWithText(text(R.string.weekday_mon)).assertIsDisplayed()
+            // The start button exists only on Home.
+            awaitText(R.string.action_start)
+            composeRule.onNodeWithText(text(R.string.action_start)).assertIsDisplayed()
         }
     }
 
     @Test
     fun everyTabIsReachableFromEveryOtherTab() {
+        // Assertions use wording unique to each screen, never the tab labels.
         tapTab(R.string.tab_history)
-        composeRule.onNodeWithText(text(R.string.screen_history_title)).assertIsDisplayed()
+        awaitText(R.string.history_empty)
 
         tapTab(R.string.tab_stats)
-        composeRule.onNodeWithText(text(R.string.stats_tab_overview)).assertIsDisplayed()
+        awaitText(R.string.stats_tab_overview)
 
         tapTab(R.string.tab_settings)
-        composeRule.onNodeWithText(text(R.string.settings_section_appearance)).assertIsDisplayed()
+        awaitText(R.string.settings_section_appearance)
 
         tapTab(R.string.tab_history)
-        composeRule.onNodeWithText(text(R.string.screen_history_title)).assertIsDisplayed()
+        awaitText(R.string.history_empty)
     }
 
     @Test
     fun tappingTheAlreadySelectedTabKeepsItOnScreen() {
         tapTab(R.string.tab_settings)
+        awaitText(R.string.settings_section_appearance)
+
         tapTab(R.string.tab_settings)
-        composeRule.onNodeWithText(text(R.string.settings_section_appearance)).assertIsDisplayed()
+        awaitText(R.string.settings_section_appearance)
     }
 }
