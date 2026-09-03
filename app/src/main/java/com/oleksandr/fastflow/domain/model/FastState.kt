@@ -6,6 +6,15 @@ sealed interface FastState {
     /** Nothing running; the button offers to start. */
     data object Idle : FastState
 
+    /**
+     * Tracking is switched off on purpose.
+     *
+     * Distinct from [Idle]: idle still counts the eating window down and lets
+     * the next fast start by itself, whereas paused counts nothing, schedules
+     * nothing and waits for the user to come back.
+     */
+    data object Paused : FastState
+
     /** A fast is running and the goal is still ahead. */
     data class Fasting(val fast: Fast, val plan: FastingPlan) : FastState
 

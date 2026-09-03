@@ -5,6 +5,8 @@ data class AppSettings(
     val activePlanId: String = FastingPlan.DEFAULT_ID,
     /** Begin the next fast by itself when the eating window closes. */
     val autoStartNextFast: Boolean = false,
+    /** Tracking is on hold: no countdown, no alarms, no auto-start. */
+    val trackingPaused: Boolean = false,
     /** Lead time for the "eating window closes soon" alarm; `null` = off. */
     val eatingEndReminderMinutes: Int? = 60,
     /** Minutes past midnight for the daily nudge; `null` = off. */

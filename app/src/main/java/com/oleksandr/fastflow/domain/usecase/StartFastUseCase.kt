@@ -64,6 +64,10 @@ class StartFastUseCase @Inject constructor(
             is FastEditResult.Invalid -> StartFastResult.InvalidTime(validation.error)
             is FastEditResult.Valid -> {
                 val id = fastRepository.insert(validation.fast)
+                // Starting is the clearest possible "I am tracking again", so
+                // it lifts the pause rather than leaving a running fast that
+                // the paused state would hide.
+                if (settings.trackingPaused) settingsRepository.setTrackingPaused(false)
                 // Every write is followed by a full reschedule (CLAUDE.md).
                 alarmScheduler.rescheduleAll()
                 widgetUpdater.refresh()

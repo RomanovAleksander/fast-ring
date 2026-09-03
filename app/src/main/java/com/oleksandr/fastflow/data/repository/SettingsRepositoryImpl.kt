@@ -23,6 +23,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setAutoStartNextFast(enabled: Boolean) =
         store.setAutoStartNextFast(enabled)
 
+    override suspend fun setTrackingPaused(paused: Boolean) = store.setTrackingPaused(paused)
+
     override suspend fun setEatingEndReminderMinutes(minutes: Int?) =
         store.setEatingEndReminderMinutes(minutes)
 

@@ -76,6 +76,7 @@ fun HomeScreen(
         onEditStart = { showStartEditor = true },
         onOpenPlans = { showPlanPicker = true },
         onOpenDay = onOpenDay,
+        onSetPaused = viewModel::setPaused,
     )
 
     if (showPlanPicker) {
@@ -132,6 +133,7 @@ private fun HomeContent(
     onEditStart: () -> Unit,
     onOpenPlans: () -> Unit,
     onOpenDay: (LocalDate) -> Unit,
+    onSetPaused: (Boolean) -> Unit,
 ) {
     val palette = LocalAppPalette.current
     val animationsEnabled = rememberAnimationsEnabled()
@@ -181,6 +183,8 @@ private fun HomeContent(
             outerProgress = state.outerProgress,
             outerColor = when (state.phase) {
                 HomePhase.FASTING, HomePhase.IDLE -> palette.fasting
+                // Paused reads as switched off, so even the empty track dims.
+                HomePhase.PAUSED -> palette.textTertiary
                 HomePhase.OVERTIME -> palette.success
                 // Ended short of the goal: the ring stays partial-coloured.
                 HomePhase.EATING ->
@@ -248,7 +252,7 @@ private fun HomeContent(
         Spacer(Modifier.weight(1f))
 
         when (state.phase) {
-            HomePhase.IDLE -> CapsuleButton(
+            HomePhase.IDLE, HomePhase.PAUSED -> CapsuleButton(
                 text = stringResource(R.string.action_start),
                 onClick = onStart,
                 style = CapsuleStyle.FILLED,
@@ -269,8 +273,44 @@ private fun HomeContent(
             )
         }
 
+        // The way out of the loop: pausing stops the eating-window countdown,
+        // the reminders and the auto-start until the user comes back. Offered
+        // only where there is a loop to leave — never mid-fast, where the
+        // honest action is to stop the fast.
+        val pauseAction: Pair<Int, Boolean>? = when (state.phase) {
+            HomePhase.IDLE, HomePhase.EATING -> R.string.action_pause to true
+            HomePhase.PAUSED -> R.string.action_resume_tracking to false
+            HomePhase.FASTING, HomePhase.OVERTIME -> null
+        }
+        if (pauseAction != null) {
+            TextAction(
+                text = stringResource(pauseAction.first),
+                onClick = { onSetPaused(pauseAction.second) },
+            )
+        }
+
         Spacer(Modifier.height(16.dp))
     }
+}
+
+/** The quiet secondary choice under the capsule: text only, no chrome. */
+@Composable
+private fun TextAction(text: String, onClick: () -> Unit) {
+    val palette = LocalAppPalette.current
+    Text(
+        text = text,
+        style = AppTypography.bodyMedium,
+        color = palette.textSecondary,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(vertical = 12.dp),
+    )
 }
 
 /** Big timer plus the caption underneath it (SPEC 5.2). */
@@ -282,7 +322,7 @@ private fun RingCenter(state: HomeUiState) {
 
     val displayMillis = when (state.phase) {
         HomePhase.EATING -> state.eatingRemainingMillis
-        HomePhase.IDLE -> 0L
+        HomePhase.IDLE, HomePhase.PAUSED -> 0L
         else -> state.elapsedMillis
     }
 
@@ -318,6 +358,8 @@ private fun RingCenter(state: HomeUiState) {
 
             HomePhase.EATING ->
                 stringResource(R.string.home_eating_window, DurationFormat.compact(state.eatingRemainingMillis))
+
+            HomePhase.PAUSED -> stringResource(R.string.home_paused_hint)
 
             HomePhase.IDLE -> null
         }
@@ -406,6 +448,7 @@ private fun relativeDateTime(millis: Long, zone: ZoneId, use24Hour: Boolean): St
 private fun HomePhase.captionRes(): Int = when (this) {
     HomePhase.FASTING, HomePhase.OVERTIME -> R.string.state_fasting
     HomePhase.EATING -> R.string.state_eating
+    HomePhase.PAUSED -> R.string.state_paused
     HomePhase.IDLE -> R.string.state_idle
 }
 

@@ -13,6 +13,8 @@ interface SettingsRepository {
 
     suspend fun setAutoStartNextFast(enabled: Boolean)
 
+    suspend fun setTrackingPaused(paused: Boolean)
+
     suspend fun setEatingEndReminderMinutes(minutes: Int?)
 
     suspend fun setDailyReminderMinuteOfDay(minuteOfDay: Int?)

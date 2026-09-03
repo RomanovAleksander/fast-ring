@@ -102,6 +102,10 @@ class InMemorySettingsRepository(initial: AppSettings = AppSettings()) : Setting
         state.value = state.value.copy(autoStartNextFast = enabled)
     }
 
+    override suspend fun setTrackingPaused(paused: Boolean) {
+        state.value = state.value.copy(trackingPaused = paused)
+    }
+
     override suspend fun setEatingEndReminderMinutes(minutes: Int?) {
         state.value = state.value.copy(eatingEndReminderMinutes = minutes)
     }

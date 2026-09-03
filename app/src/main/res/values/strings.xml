@@ -18,11 +18,14 @@
     <string name="state_fasting">ГОЛОДУВАННЯ</string>
     <string name="state_eating">ВІКНО ЇЖІ</string>
     <string name="state_idle">ГОТОВИЙ</string>
+    <string name="state_paused">НА ПАУЗІ</string>
 
     <!-- Кнопки -->
     <string name="action_start">Почати</string>
     <string name="action_stop">Завершити</string>
     <string name="action_start_fasting">Почати голодування</string>
+    <string name="action_pause">Пауза</string>
+    <string name="action_resume_tracking">Відновити трекінг</string>
     <string name="action_cancel">Скасувати</string>
     <string name="action_save">Зберегти</string>
     <string name="action_delete">Видалити</string>
@@ -36,6 +39,7 @@
     <string name="home_remaining">залишилось %1$s</string>
     <string name="home_until_food">до їжі %1$s</string>
     <string name="home_eating_window">вікно їжі: %1$s</string>
+    <string name="home_paused_hint">трекінг зупинено, нагадувань не буде</string>
     <string name="home_overtime">+%1$s</string>
     <string name="home_credit_hint">почни до %1$s, щоб зарахувати день</string>
     <string name="home_window_range">%1$s → %2$s</string>

@@ -3,8 +3,8 @@ package com.oleksandr.fastflow.ui.home
 import com.oleksandr.fastflow.domain.model.DayInfo
 import com.oleksandr.fastflow.domain.model.FastingPlan
 
-/** Which of the four Home states is on screen (SPEC 5.3). */
-enum class HomePhase { IDLE, FASTING, OVERTIME, EATING }
+/** Which of the Home states is on screen (SPEC 5.3, plus the paused state). */
+enum class HomePhase { IDLE, FASTING, OVERTIME, EATING, PAUSED }
 
 /**
  * Everything Home draws, as data.

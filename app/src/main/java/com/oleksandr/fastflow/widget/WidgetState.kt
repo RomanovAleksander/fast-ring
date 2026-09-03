@@ -3,7 +3,7 @@ package com.oleksandr.fastflow.widget
 import com.oleksandr.fastflow.domain.model.ThemePalette
 
 /** Which ring the widget is showing, mirroring the app's Home states. */
-enum class WidgetPhase { IDLE, FASTING, OVERTIME, EATING }
+enum class WidgetPhase { IDLE, FASTING, OVERTIME, EATING, PAUSED }
 
 /** Everything the widgets need, resolved before Glance composes. */
 data class WidgetState(

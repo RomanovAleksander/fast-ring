@@ -109,6 +109,7 @@ internal fun ringColorFor(phase: WidgetPhase, palette: AppPalette): Color = when
     WidgetPhase.FASTING, WidgetPhase.IDLE -> palette.fasting
     WidgetPhase.OVERTIME -> palette.success
     WidgetPhase.EATING -> palette.eating
+    WidgetPhase.PAUSED -> palette.textTertiary
 }
 
 private fun wholeHours(millis: Long): String = (millis.coerceAtLeast(0L) / 3_600_000L).toString()
@@ -133,6 +134,7 @@ internal object WidgetStateLoader {
             lastFinished = lastFinished,
             lastPlan = lastFinished?.let { plans.getById(it.planId) },
             nowMillis = now,
+            trackingPaused = settings.trackingPaused,
         )
 
         return when (state) {
@@ -177,6 +179,15 @@ internal object WidgetStateLoader {
             FastState.Idle -> WidgetState(
                 phase = WidgetPhase.IDLE,
                 label = context.getString(R.string.widget_idle),
+                timer = "--:--",
+                hours = "–",
+                progress = 0f,
+                palette = settings.palette,
+            )
+
+            FastState.Paused -> WidgetState(
+                phase = WidgetPhase.PAUSED,
+                label = context.getString(R.string.state_paused),
                 timer = "--:--",
                 hours = "–",
                 progress = 0f,

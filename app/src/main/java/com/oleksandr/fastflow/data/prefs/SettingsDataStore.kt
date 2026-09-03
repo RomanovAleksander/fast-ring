@@ -22,6 +22,7 @@ class SettingsDataStore(private val context: Context) {
     private object Keys {
         val ACTIVE_PLAN_ID = stringPreferencesKey("activePlanId")
         val AUTO_START_NEXT = booleanPreferencesKey("autoStartNextFast")
+        val TRACKING_PAUSED = booleanPreferencesKey("trackingPaused")
         val EATING_END_REMINDER = intPreferencesKey("eatingEndReminderMin")
         val DAILY_REMINDER = intPreferencesKey("dailyReminderMinuteOfDay")
         val MILESTONES = booleanPreferencesKey("milestonesEnabled")
@@ -41,6 +42,7 @@ class SettingsDataStore(private val context: Context) {
         AppSettings(
             activePlanId = prefs[Keys.ACTIVE_PLAN_ID] ?: FastingPlan.DEFAULT_ID,
             autoStartNextFast = prefs[Keys.AUTO_START_NEXT] ?: false,
+            trackingPaused = prefs[Keys.TRACKING_PAUSED] ?: false,
             // Three distinct cases: never set (use the default), explicitly
             // switched off, or a real value. Collapsing the first two made
             // "off" read back as the default, so the row looked stuck.
@@ -61,6 +63,8 @@ class SettingsDataStore(private val context: Context) {
     suspend fun setActivePlanId(id: String) = edit { it[Keys.ACTIVE_PLAN_ID] = id }
 
     suspend fun setAutoStartNextFast(enabled: Boolean) = edit { it[Keys.AUTO_START_NEXT] = enabled }
+
+    suspend fun setTrackingPaused(paused: Boolean) = edit { it[Keys.TRACKING_PAUSED] = paused }
 
     suspend fun setEatingEndReminderMinutes(minutes: Int?) =
         edit { it[Keys.EATING_END_REMINDER] = minutes ?: OFF }

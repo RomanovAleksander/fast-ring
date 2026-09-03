@@ -5,6 +5,7 @@ import com.oleksandr.fastflow.domain.logic.FastStateResolver
 import com.oleksandr.fastflow.domain.model.FastState
 import com.oleksandr.fastflow.domain.repository.FastRepository
 import com.oleksandr.fastflow.domain.repository.PlanRepository
+import com.oleksandr.fastflow.domain.repository.SettingsRepository
 import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -21,20 +22,23 @@ import kotlinx.coroutines.flow.flow
 class ObserveCurrentStateUseCase @Inject constructor(
     private val fastRepository: FastRepository,
     private val planRepository: PlanRepository,
+    private val settingsRepository: SettingsRepository,
     private val clock: AppClock,
 ) {
     operator fun invoke(): Flow<FastState> = combine(
         fastRepository.observeActive(),
         fastRepository.observeLastFinished(),
         planRepository.observeAll(),
+        settingsRepository.observe(),
         secondTicker(),
-    ) { active, lastFinished, plans, _ ->
+    ) { active, lastFinished, plans, settings, _ ->
         FastStateResolver.resolve(
             activeFast = active,
             activePlan = active?.let { fast -> plans.firstOrNull { it.id == fast.planId } },
             lastFinished = lastFinished,
             lastPlan = lastFinished?.let { fast -> plans.firstOrNull { it.id == fast.planId } },
             nowMillis = clock.nowMillis(),
+            trackingPaused = settings.trackingPaused,
         )
     }
 

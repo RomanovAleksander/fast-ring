@@ -45,6 +45,13 @@ class AlarmSchedulerImpl @Inject constructor(
         val lastFinished = fastRepository.getLastFinished()
         val settings = settingsRepository.get()
 
+        // Paused: cancelAll above already emptied the queue, and nothing goes
+        // back in — no eating-window countdown, no daily nudge, no auto-start.
+        if (settings.trackingPaused && active == null) {
+            notificationHelper.cancelOngoing()
+            return
+        }
+
         // The eating window only exists between a finished daily fast and the
         // next one.
         val eatingWindowEnd = if (active == null && lastFinished != null) {

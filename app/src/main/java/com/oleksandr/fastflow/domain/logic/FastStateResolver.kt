@@ -12,12 +12,18 @@ import com.oleksandr.fastflow.domain.model.FastingPlan
  */
 object FastStateResolver {
 
+    /**
+     * @param trackingPaused the user switched tracking off; nothing counts and
+     *   nothing starts by itself. A running fast still wins, because starting
+     *   one clears the pause.
+     */
     fun resolve(
         activeFast: Fast?,
         activePlan: FastingPlan?,
         lastFinished: Fast?,
         lastPlan: FastingPlan?,
         nowMillis: Long,
+        trackingPaused: Boolean = false,
     ): FastState {
         if (activeFast != null) {
             val plan = activePlan ?: planFrom(activeFast)
@@ -28,6 +34,8 @@ object FastStateResolver {
                 FastState.Fasting(activeFast, plan)
             }
         }
+
+        if (trackingPaused) return FastState.Paused
 
         val endMillis = lastFinished?.endMillis
         val eatingMinutes = lastFinished?.eatingWindowMinutes

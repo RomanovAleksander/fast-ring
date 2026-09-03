@@ -111,7 +111,9 @@ class AlarmReceiver : BroadcastReceiver() {
             }
 
             type == AlarmType.EATING_WINDOW_ENDED -> {
-                if (settingsRepository.get().autoStartNextFast) {
+                val settings = settingsRepository.get()
+                if (settings.trackingPaused) return
+                if (settings.autoStartNextFast) {
                     startFast()
                 } else {
                     notificationHelper.showEvent(

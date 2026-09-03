@@ -18,6 +18,7 @@ import com.oleksandr.fastflow.domain.usecase.ComputeStreakUseCase
 import com.oleksandr.fastflow.domain.usecase.EditFastUseCase
 import com.oleksandr.fastflow.domain.usecase.EndFastUseCase
 import com.oleksandr.fastflow.domain.usecase.ObserveCurrentStateUseCase
+import com.oleksandr.fastflow.domain.usecase.SetTrackingPausedUseCase
 import com.oleksandr.fastflow.domain.usecase.StartFastUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.DayOfWeek
@@ -44,6 +45,7 @@ class HomeViewModel @Inject constructor(
     private val startFastUseCase: StartFastUseCase,
     private val endFastUseCase: EndFastUseCase,
     private val editFastUseCase: EditFastUseCase,
+    private val setTrackingPausedUseCase: SetTrackingPausedUseCase,
     private val fastRepository: FastRepository,
     private val clock: AppClock,
 ) : ViewModel() {
@@ -79,6 +81,11 @@ class HomeViewModel @Inject constructor(
 
     fun endFast(endMillis: Long? = null) {
         viewModelScope.launch { endFastUseCase(endMillis = endMillis) }
+    }
+
+    /** Stops or resumes tracking altogether; see [SetTrackingPausedUseCase]. */
+    fun setPaused(paused: Boolean) {
+        viewModelScope.launch { setTrackingPausedUseCase(paused) }
     }
 
     fun selectPlan(id: String) {
@@ -127,6 +134,11 @@ class HomeViewModel @Inject constructor(
         return when (state) {
             FastState.Idle -> base.copy(
                 phase = HomePhase.IDLE,
+                planId = settings.activePlanId,
+            )
+
+            FastState.Paused -> base.copy(
+                phase = HomePhase.PAUSED,
                 planId = settings.activePlanId,
             )
 
