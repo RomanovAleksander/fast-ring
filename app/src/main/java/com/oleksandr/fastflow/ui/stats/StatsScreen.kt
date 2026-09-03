@@ -125,7 +125,6 @@ fun StatsScreen(
             }
         }
     }
-}
 
     val day = selectedDay
     if (day != null) {
