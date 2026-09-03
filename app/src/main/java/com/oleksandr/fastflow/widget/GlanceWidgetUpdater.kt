@@ -14,7 +14,8 @@ class GlanceWidgetUpdater @Inject constructor(
 ) : WidgetUpdater {
 
     override suspend fun refresh() {
-        // A widget may not be placed at all, which Glance reports as an error.
+        // Either size may not be placed at all, which Glance reports as an error.
         runCatching { FastFlowWidget().updateAll(context) }
+        runCatching { FastFlowSmallWidget().updateAll(context) }
     }
 }

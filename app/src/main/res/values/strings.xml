@@ -42,6 +42,8 @@
     <string name="home_edit_start">Змінити час початку</string>
     <string name="edit_start_today">Сьогодні</string>
     <string name="edit_start_yesterday">Учора</string>
+    <string name="home_tomorrow">Завтра</string>
+    <string name="home_streak_caption">поспіль</string>
     <string name="home_change_plan">Змінити план</string>
 
     <!-- Дострокове завершення -->
@@ -175,5 +177,6 @@
 
     <!-- Віджет -->
     <string name="widget_description">Таймер голодування</string>
+    <string name="widget_small_description">Кільце голодування (1×1)</string>
     <string name="widget_idle">Готовий</string>
 </resources>

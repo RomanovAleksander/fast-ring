@@ -37,6 +37,7 @@ import com.oleksandr.fastflow.domain.logic.DurationFormat
 import com.oleksandr.fastflow.ui.components.CapsuleButton
 import com.oleksandr.fastflow.ui.components.CapsuleStyle
 import com.oleksandr.fastflow.ui.components.DualProgressRing
+import com.oleksandr.fastflow.ui.components.MiniRing
 import com.oleksandr.fastflow.ui.components.WeekStrip
 import com.oleksandr.fastflow.ui.plans.PlanPickerSheet
 import com.oleksandr.fastflow.ui.theme.AppTypography
@@ -48,8 +49,11 @@ import com.oleksandr.fastflow.ui.theme.TimerSecondsStyle
 import com.oleksandr.fastflow.ui.theme.rememberAnimationsEnabled
 import com.oleksandr.fastflow.ui.util.ClockFormat
 import com.oleksandr.fastflow.ui.util.rememberUse24Hour
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.TextStyle
+import java.util.Locale
 
 @Composable
 fun HomeScreen(
@@ -141,46 +145,55 @@ private fun HomeContent(
             .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Phase caption and plan chip, top-left (SPEC 5.3).
-        Column(
+        // Phase caption and plan chip on the left, streak on the right.
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp),
-            horizontalAlignment = Alignment.Start,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = stringResource(state.phase.captionRes()),
-                style = OverlineStyle,
-                color = palette.textSecondary,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = planLabel(state) + " ⌄",
-                style = AppTypography.headlineSmall,
-                color = palette.textPrimary,
-                modifier = Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    // The plan is frozen onto a running fast, so it only
-                    // changes while nothing is in progress.
-                    enabled = state.phase == HomePhase.IDLE,
-                    onClick = onOpenPlans,
-                ),
-            )
+            Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
+                Text(
+                    text = stringResource(state.phase.captionRes()),
+                    style = OverlineStyle,
+                    color = palette.textSecondary,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = planLabel(state) + " ⌄",
+                    style = AppTypography.headlineSmall,
+                    color = palette.textPrimary,
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        // Always tappable: a change during a fast applies to the
+                        // next one, since the running goal is frozen on the record.
+                        onClick = onOpenPlans,
+                    ),
+                )
+            }
+            StreakBadge(days = state.currentStreak)
         }
 
         Spacer(Modifier.height(24.dp))
 
         DualProgressRing(
             outerProgress = state.outerProgress,
-            outerColor = if (state.phase == HomePhase.FASTING) palette.fasting else palette.success,
+            outerColor = when (state.phase) {
+                HomePhase.FASTING, HomePhase.IDLE -> palette.fasting
+                HomePhase.OVERTIME -> palette.success
+                // Ended short of the goal: the ring stays partial-coloured.
+                HomePhase.EATING ->
+                    if (state.previousFastEarnedDay) palette.success else palette.partial
+            },
             innerProgress = state.innerProgress,
             innerColor = when (state.phase) {
                 HomePhase.OVERTIME -> palette.success
                 else -> palette.eating
             },
             showInnerRing = state.showInnerRing,
-            goalReached = state.phase == HomePhase.OVERTIME || state.phase == HomePhase.EATING,
+            goalReached = state.phase == HomePhase.OVERTIME ||
+                (state.phase == HomePhase.EATING && state.previousFastEarnedDay),
             animationsEnabled = animationsEnabled,
         ) {
             RingCenter(state = state)
@@ -188,25 +201,40 @@ private fun HomeContent(
 
         Spacer(Modifier.height(16.dp))
 
-        // "20:00 → 12:00"
+        // Start and goal on one line; each half opens what it describes.
         val start = state.startMillis
         val end = state.plannedEndMillis
         if (start != null && end != null) {
-            Text(
-                text = stringResource(
-                    R.string.home_window_range,
-                    ClockFormat.time(start, zone, use24Hour),
-                    ClockFormat.time(end, zone, use24Hour),
-                ),
-                style = AppTypography.bodyMedium,
-                color = palette.textSecondary,
-                modifier = Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    enabled = state.phase == HomePhase.FASTING || state.phase == HomePhase.OVERTIME,
-                    onClick = onEditStart,
-                ),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = relativeDateTime(start, zone, use24Hour),
+                    style = AppTypography.bodyMedium,
+                    color = palette.textSecondary,
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            enabled = state.phase == HomePhase.FASTING ||
+                                state.phase == HomePhase.OVERTIME,
+                            onClick = onEditStart,
+                        )
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                )
+                Text(text = "→", style = AppTypography.bodyMedium, color = palette.textTertiary)
+                Text(
+                    text = relativeDateTime(end, zone, use24Hour),
+                    style = AppTypography.bodyMedium,
+                    color = palette.textSecondary,
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            // The goal follows from the plan, so this opens the picker.
+                            onClick = onOpenPlans,
+                        )
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                )
+            }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -319,6 +347,60 @@ private fun RingCenter(state: HomeUiState) {
             )
         }
     }
+}
+
+/**
+ * Successful days in a row, top-right (the one number worth glancing at).
+ *
+ * A ring rather than a plain number, so it echoes the main element instead of
+ * introducing a new shape.
+ */
+@Composable
+private fun StreakBadge(days: Int) {
+    val palette = LocalAppPalette.current
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(contentAlignment = Alignment.Center) {
+            MiniRing(
+                // Full at a week, so early streaks still show visible movement.
+                progress = (days.coerceAtLeast(0) % STREAK_RING_DAYS) / STREAK_RING_DAYS.toFloat(),
+                color = if (days > 0) palette.success else palette.textTertiary,
+                size = 44.dp,
+                strokeWidth = 3.dp,
+            )
+            Text(
+                text = days.toString(),
+                style = AppTypography.titleMedium,
+                color = if (days > 0) palette.textPrimary else palette.textTertiary,
+            )
+        }
+        Text(
+            text = stringResource(R.string.home_streak_caption),
+            style = AppTypography.labelSmall,
+            color = palette.textSecondary,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+    }
+}
+
+/** One ring turn per week. */
+private const val STREAK_RING_DAYS = 7
+
+/** "Сьогодні 14:58", "Учора 22:58", otherwise "Ср 22:58". */
+@Composable
+private fun relativeDateTime(millis: Long, zone: ZoneId, use24Hour: Boolean): String {
+    val date = remember(millis, zone) {
+        Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
+    }
+    val today = remember(zone) { LocalDate.now(zone) }
+    val time = ClockFormat.time(millis, zone, use24Hour)
+
+    val dayLabel = when (date) {
+        today -> stringResource(R.string.edit_start_today)
+        today.minusDays(1) -> stringResource(R.string.edit_start_yesterday)
+        today.plusDays(1) -> stringResource(R.string.home_tomorrow)
+        else -> date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale("uk")).replaceFirstChar { it.uppercase() }
+    }
+    return "$dayLabel $time"
 }
 
 private fun HomePhase.captionRes(): Int = when (this) {

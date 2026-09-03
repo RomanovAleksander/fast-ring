@@ -45,6 +45,10 @@ data class HomeUiState(
 
     val week: List<DayInfo> = emptyList(),
     val plans: List<FastingPlan> = emptyList(),
+    /** Successful days in a row, shown top-right. */
+    val currentStreak: Int = 0,
+    /** True once the finished fast earned its day, so the ring stays success-coloured. */
+    val previousFastEarnedDay: Boolean = true,
     val use24HourClock: Boolean? = null,
 ) {
     val isExtended: Boolean get() = planEatingMinutes == null

@@ -14,6 +14,7 @@ import com.oleksandr.fastflow.domain.repository.FastRepository
 import com.oleksandr.fastflow.domain.repository.PlanRepository
 import com.oleksandr.fastflow.domain.repository.SettingsRepository
 import com.oleksandr.fastflow.domain.usecase.ComputeDayStatusesUseCase
+import com.oleksandr.fastflow.domain.usecase.ComputeStreakUseCase
 import com.oleksandr.fastflow.domain.usecase.EditFastUseCase
 import com.oleksandr.fastflow.domain.usecase.EndFastUseCase
 import com.oleksandr.fastflow.domain.usecase.ObserveCurrentStateUseCase
@@ -36,6 +37,7 @@ import kotlinx.coroutines.launch
 class HomeViewModel @Inject constructor(
     observeCurrentState: ObserveCurrentStateUseCase,
     computeDayStatuses: ComputeDayStatusesUseCase,
+    computeStreak: ComputeStreakUseCase,
     private val settingsRepository: SettingsRepository,
     private val planRepository: PlanRepository,
     private val alarmScheduler: AlarmScheduler,
@@ -62,8 +64,9 @@ class HomeViewModel @Inject constructor(
         weekFlow,
         settingsRepository.observe(),
         planRepository.observeAll(),
-    ) { state, week, settings, plans ->
-        toUiState(state, week, settings).copy(plans = plans)
+        computeStreak(),
+    ) { state, week, settings, plans, streak ->
+        toUiState(state, week, settings).copy(plans = plans, currentStreak = streak.current)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -185,13 +188,18 @@ class HomeViewModel @Inject constructor(
             is FastState.Eating -> {
                 val windowMillis = (state.previousFast.eatingWindowMinutes ?: 0) * 60_000L
                 val remaining = (state.windowEndsAtMillis - now).coerceAtLeast(0L)
+                val previousEnd = state.previousFast.endMillis ?: now
+                // The outer ring keeps the share of the goal actually reached, so
+                // ending early reads as a partly filled ring rather than a full one.
+                val achieved = state.previousFast.completionRatio(previousEnd)
                 base.copy(
                     phase = HomePhase.EATING,
                     planId = state.plan.id,
                     planName = state.plan.name,
                     planFastingMinutes = state.plan.fastingMinutes,
                     planEatingMinutes = state.plan.eatingMinutes,
-                    outerProgress = 1f,
+                    outerProgress = achieved.coerceAtMost(1f),
+                    previousFastEarnedDay = achieved >= SUCCESS_THRESHOLD,
                     // Counts down: starts full and melts away (SPEC 5.2).
                     innerProgress = if (windowMillis > 0) {
                         (remaining.toFloat() / windowMillis).coerceIn(0f, 1f)
@@ -202,8 +210,10 @@ class HomeViewModel @Inject constructor(
                     eatingEndsAtMillis = state.windowEndsAtMillis,
                     eatingRemainingMillis = remaining,
                     creditDeadlineMillis = state.creditDeadlineMillis,
-                    startMillis = state.previousFast.startMillis,
-                    plannedEndMillis = state.previousFast.endMillis,
+                    // While eating, the row describes the eating window itself;
+                    // showing the finished fast made both ends read the same time.
+                    startMillis = previousEnd,
+                    plannedEndMillis = state.windowEndsAtMillis,
                 )
             }
         }
@@ -211,5 +221,6 @@ class HomeViewModel @Inject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val SUCCESS_THRESHOLD = 0.9f
     }
 }

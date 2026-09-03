@@ -30,6 +30,7 @@ import com.oleksandr.fastflow.R
 import com.oleksandr.fastflow.domain.logic.DurationFormat
 import com.oleksandr.fastflow.domain.logic.FastStateResolver
 import com.oleksandr.fastflow.domain.model.FastState
+import com.oleksandr.fastflow.ui.theme.AppPalette
 import com.oleksandr.fastflow.ui.theme.paletteFor
 
 /**
@@ -49,7 +50,7 @@ class FastFlowWidget : GlanceAppWidget() {
     private fun Content(state: WidgetState) {
         // The widget reads the same palette as the app (SPEC 3.6).
         val palette = paletteFor(state.palette)
-        val ringColor: Color = if (state.goalReached) palette.success else palette.fasting
+        val ringColor: Color = ringColorFor(state.phase, palette)
 
         Box(
             modifier = GlanceModifier
@@ -103,6 +104,15 @@ class FastFlowWidget : GlanceAppWidget() {
     }
 }
 
+/** Ring colour per phase, matching the app's Home screen. */
+internal fun ringColorFor(phase: WidgetPhase, palette: AppPalette): Color = when (phase) {
+    WidgetPhase.FASTING, WidgetPhase.IDLE -> palette.fasting
+    WidgetPhase.OVERTIME -> palette.success
+    WidgetPhase.EATING -> palette.eating
+}
+
+private fun wholeHours(millis: Long): String = (millis.coerceAtLeast(0L) / 3_600_000L).toString()
+
 /** Reads the current state for the widget, outside of composition. */
 internal object WidgetStateLoader {
 
@@ -126,39 +136,50 @@ internal object WidgetStateLoader {
         )
 
         return when (state) {
-            is FastState.Fasting -> WidgetState(
-                label = context.getString(R.string.state_fasting),
-                timer = DurationFormat.hhmm(state.fast.elapsed(now).toMillis()),
-                progress = state.fast.completionRatio(now),
-                running = true,
-                goalReached = false,
-                palette = settings.palette,
-            )
+            is FastState.Fasting -> {
+                val elapsed = state.fast.elapsed(now).toMillis()
+                WidgetState(
+                    phase = WidgetPhase.FASTING,
+                    label = context.getString(R.string.state_fasting),
+                    timer = DurationFormat.hhmm(elapsed),
+                    hours = wholeHours(elapsed),
+                    progress = state.fast.completionRatio(now),
+                    palette = settings.palette,
+                )
+            }
 
-            is FastState.Overtime -> WidgetState(
-                label = context.getString(R.string.state_fasting),
-                timer = DurationFormat.hhmm(state.fast.elapsed(now).toMillis()),
-                progress = 1f,
-                running = true,
-                goalReached = true,
-                palette = settings.palette,
-            )
+            is FastState.Overtime -> {
+                val elapsed = state.fast.elapsed(now).toMillis()
+                WidgetState(
+                    phase = WidgetPhase.OVERTIME,
+                    label = context.getString(R.string.state_fasting),
+                    timer = DurationFormat.hhmm(elapsed),
+                    hours = wholeHours(elapsed),
+                    progress = 1f,
+                    palette = settings.palette,
+                )
+            }
 
-            is FastState.Eating -> WidgetState(
-                label = context.getString(R.string.state_eating),
-                timer = DurationFormat.hhmm(state.windowEndsAtMillis - now),
-                progress = 1f,
-                running = false,
-                goalReached = true,
-                palette = settings.palette,
-            )
+            is FastState.Eating -> {
+                val remaining = (state.windowEndsAtMillis - now).coerceAtLeast(0L)
+                val window = (state.previousFast.eatingWindowMinutes ?: 0) * 60_000L
+                WidgetState(
+                    phase = WidgetPhase.EATING,
+                    label = context.getString(R.string.state_eating),
+                    timer = DurationFormat.hhmm(remaining),
+                    hours = wholeHours(remaining),
+                    // Counts down, like the inner ring in the app.
+                    progress = if (window > 0) (remaining.toFloat() / window) else 0f,
+                    palette = settings.palette,
+                )
+            }
 
             FastState.Idle -> WidgetState(
+                phase = WidgetPhase.IDLE,
                 label = context.getString(R.string.widget_idle),
                 timer = "--:--",
+                hours = "–",
                 progress = 0f,
-                running = false,
-                goalReached = false,
                 palette = settings.palette,
             )
         }

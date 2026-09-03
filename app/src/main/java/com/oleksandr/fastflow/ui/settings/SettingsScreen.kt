@@ -35,11 +35,15 @@ import com.oleksandr.fastflow.domain.model.ThemePalette
 import com.oleksandr.fastflow.ui.components.GroupedDivider
 import com.oleksandr.fastflow.ui.components.GroupedRow
 import com.oleksandr.fastflow.ui.components.GroupedSection
+import com.oleksandr.fastflow.ui.components.DialogOption
 import com.oleksandr.fastflow.ui.components.MiniRing
+import com.oleksandr.fastflow.ui.components.OptionsDialog
+import com.oleksandr.fastflow.ui.components.TimeDialog
 import com.oleksandr.fastflow.ui.plans.CustomPlanSheet
 import com.oleksandr.fastflow.ui.theme.AppTypography
 import com.oleksandr.fastflow.ui.theme.LocalAppPalette
 import com.oleksandr.fastflow.ui.theme.paletteFor
+import com.oleksandr.fastflow.ui.util.rememberUse24Hour
 import kotlinx.coroutines.launch
 
 @Composable
@@ -49,6 +53,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showCustomPlan by remember { mutableStateOf(false) }
+    var showEatingReminder by remember { mutableStateOf(false) }
+    var showDailyReminder by remember { mutableStateOf(false) }
+    var showClockFormat by remember { mutableStateOf(false) }
 
     val exportCsvLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv"),
@@ -135,7 +142,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     value = state.settings.eatingEndReminderMinutes
                         ?.let { stringResource(R.string.settings_minutes_before, it) }
                         ?: stringResource(R.string.settings_off),
-                    onClick = { viewModel.setEatingEndReminder(nextReminderChoice(state.settings)) },
+                    onClick = { showEatingReminder = true },
                 )
                 GroupedDivider()
                 GroupedDivider()
@@ -144,9 +151,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     value = state.settings.dailyReminderMinuteOfDay
                         ?.let { formatMinuteOfDay(it) }
                         ?: stringResource(R.string.settings_off),
-                    onClick = {
-                        viewModel.setDailyReminder(nextDailyReminderChoice(state.settings))
-                    },
+                    onClick = { showDailyReminder = true },
                 )
                 GroupedDivider()
                 ToggleRow(
@@ -162,9 +167,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                         true -> stringResource(R.string.settings_time_format_24)
                         false -> stringResource(R.string.settings_time_format_12)
                     },
-                    onClick = {
-                        viewModel.setUse24HourClock(nextClockChoice(state.settings.use24HourClock))
-                    },
+                    onClick = { showClockFormat = true },
                 )
             }
         }
@@ -226,6 +229,49 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         }
     }
 
+    if (showEatingReminder) {
+        OptionsDialog(
+            title = stringResource(R.string.settings_eating_end_reminder),
+            options = AppSettings.EATING_REMINDER_CHOICES.map {
+                DialogOption(stringResource(R.string.settings_minutes_before, it), it)
+            } + DialogOption(stringResource(R.string.settings_off), null),
+            selected = state.settings.eatingEndReminderMinutes,
+            onSelect = viewModel::setEatingEndReminder,
+            onDismiss = { showEatingReminder = false },
+        )
+    }
+
+    if (showDailyReminder) {
+        TimeDialog(
+            title = stringResource(R.string.settings_daily_reminder),
+            initialMinuteOfDay = state.settings.dailyReminderMinuteOfDay,
+            use24Hour = rememberUse24Hour(state.settings.use24HourClock),
+            onConfirm = { minuteOfDay ->
+                showDailyReminder = false
+                viewModel.setDailyReminder(minuteOfDay)
+            },
+            onTurnOff = {
+                showDailyReminder = false
+                viewModel.setDailyReminder(null)
+            },
+            onDismiss = { showDailyReminder = false },
+        )
+    }
+
+    if (showClockFormat) {
+        OptionsDialog(
+            title = stringResource(R.string.settings_time_format),
+            options = listOf(
+                DialogOption(stringResource(R.string.settings_time_format_system), null),
+                DialogOption(stringResource(R.string.settings_time_format_24), true),
+                DialogOption(stringResource(R.string.settings_time_format_12), false),
+            ),
+            selected = state.settings.use24HourClock,
+            onSelect = viewModel::setUse24HourClock,
+            onDismiss = { showClockFormat = false },
+        )
+    }
+
     if (showCustomPlan) {
         val active = state.activePlan
         CustomPlanSheet(
@@ -240,20 +286,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     }
 }
 
-/** Cycles 20:00 → 21:00 → 22:00 → off, keeping the row a single tap. */
-private fun nextDailyReminderChoice(settings: AppSettings): Int? {
-    val choices = listOf(20 * 60, 21 * 60, 22 * 60)
-    val current = settings.dailyReminderMinuteOfDay ?: return choices.first()
-    val index = choices.indexOf(current)
-    return if (index == -1 || index == choices.lastIndex) null else choices[index + 1]
-}
 
-/** System → 24h → 12h → system. */
-private fun nextClockChoice(current: Boolean?): Boolean? = when (current) {
-    null -> true
-    true -> false
-    false -> null
-}
 
 private fun formatMinuteOfDay(minuteOfDay: Int): String =
     String.format(Locale.ROOT, "%02d:%02d", minuteOfDay / 60, minuteOfDay % 60)
@@ -352,13 +385,6 @@ private fun ChoiceRow(label: String, value: String, onClick: () -> Unit) {
     }
 }
 
-/** Cycles 15 → 30 → 60 → off, so the row needs no extra picker. */
-private fun nextReminderChoice(settings: AppSettings): Int? {
-    val choices = AppSettings.EATING_REMINDER_CHOICES
-    val current = settings.eatingEndReminderMinutes ?: return choices.first()
-    val index = choices.indexOf(current)
-    return if (index == -1 || index == choices.lastIndex) null else choices[index + 1]
-}
 
 private fun openAppSettings(context: android.content.Context) {
     runCatching {
