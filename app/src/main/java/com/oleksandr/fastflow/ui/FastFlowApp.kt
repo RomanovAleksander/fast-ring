@@ -118,14 +118,20 @@ fun FastFlowApp(
 /** Switches tabs without stacking duplicates, keeping each tab's own state. */
 private fun NavHostController.navigateToTab(tab: TopLevelTab) {
     val startId = graph.findStartDestination().id
+
+    // The timer tab is the graph's start destination, and navigating to a
+    // destination already sitting at the bottom of the stack does nothing —
+    // which is why tapping it was dead while system back worked. Back works
+    // because it pops, so this pops too.
+    if (tab == TopLevelTab.TIMER) {
+        // saveState mirrors the navigate() branch below, so the tab we leave
+        // keeps its scroll position for when it is opened again.
+        popBackStack(startId, inclusive = false, saveState = true)
+        return
+    }
+
     navigate(tab.route) {
-        popUpTo(startId) {
-            saveState = true
-            // The timer tab IS the start destination. Popping only down *to* it
-            // and then navigating to it again is a no-op, which is why tapping
-            // Timer did nothing and only system back worked.
-            inclusive = tab == TopLevelTab.TIMER
-        }
+        popUpTo(startId) { saveState = true }
         launchSingleTop = true
         restoreState = true
     }
