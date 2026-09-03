@@ -9,6 +9,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -31,8 +38,10 @@ import com.oleksandr.fastflow.ui.components.CapsuleButton
 import com.oleksandr.fastflow.ui.components.CapsuleStyle
 import com.oleksandr.fastflow.ui.components.DualProgressRing
 import com.oleksandr.fastflow.ui.components.WeekStrip
+import com.oleksandr.fastflow.ui.plans.PlanPickerSheet
 import com.oleksandr.fastflow.ui.theme.AppTypography
 import com.oleksandr.fastflow.ui.theme.LocalAppPalette
+import com.oleksandr.fastflow.ui.theme.Motion
 import com.oleksandr.fastflow.ui.theme.OverlineStyle
 import com.oleksandr.fastflow.ui.theme.TimerRingStyle
 import com.oleksandr.fastflow.ui.theme.TimerSecondsStyle
@@ -50,6 +59,7 @@ fun HomeScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showStopConfirmation by remember { mutableStateOf(false) }
     var showStartEditor by remember { mutableStateOf(false) }
+    var showPlanPicker by remember { mutableStateOf(false) }
 
     val zone = rememberZoneId()
     val use24Hour = rememberUse24Hour(state.use24HourClock)
@@ -60,8 +70,25 @@ fun HomeScreen(
         onStop = { if (state.needsStopConfirmation) showStopConfirmation = true else viewModel.endFast() },
         onStart = { viewModel.startFast() },
         onEditStart = { showStartEditor = true },
+        onOpenPlans = { showPlanPicker = true },
         onOpenDay = onOpenDay,
     )
+
+    if (showPlanPicker) {
+        PlanPickerSheet(
+            plans = state.plans,
+            activePlanId = state.planId,
+            onSelect = { id ->
+                showPlanPicker = false
+                viewModel.selectPlan(id)
+            },
+            onCreateCustom = { fasting, eating ->
+                showPlanPicker = false
+                viewModel.createCustomPlan(fasting, eating)
+            },
+            onDismiss = { showPlanPicker = false },
+        )
+    }
 
     if (showStopConfirmation) {
         StopEarlySheet(
@@ -99,6 +126,7 @@ private fun HomeContent(
     onStart: () -> Unit,
     onStop: () -> Unit,
     onEditStart: () -> Unit,
+    onOpenPlans: () -> Unit,
     onOpenDay: (LocalDate) -> Unit,
 ) {
     val palette = LocalAppPalette.current
@@ -127,9 +155,17 @@ private fun HomeContent(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = planLabel(state),
+                text = planLabel(state) + " ⌄",
                 style = AppTypography.headlineSmall,
                 color = palette.textPrimary,
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    // The plan is frozen onto a running fast, so it only
+                    // changes while nothing is in progress.
+                    enabled = state.phase == HomePhase.IDLE,
+                    onClick = onOpenPlans,
+                ),
             )
         }
 
@@ -144,6 +180,7 @@ private fun HomeContent(
                 else -> palette.eating
             },
             showInnerRing = state.showInnerRing,
+            goalReached = state.phase == HomePhase.OVERTIME || state.phase == HomePhase.EATING,
             animationsEnabled = animationsEnabled,
         ) {
             RingCenter(state = state)
@@ -228,12 +265,20 @@ private fun RingCenter(state: HomeUiState) {
                 style = TimerRingStyle,
                 color = palette.textPrimary,
             )
-            Text(
-                text = DurationFormat.seconds(displayMillis),
-                style = TimerSecondsStyle,
-                color = palette.textSecondary,
+            AnimatedContent(
+                targetState = DurationFormat.seconds(displayMillis),
+                transitionSpec = {
+                    val duration = Motion.DIGIT_FLIP_MILLIS
+                    (slideInVertically { height -> height } + fadeIn(tween(duration)))
+                        .togetherWith(
+                            slideOutVertically { height -> -height } + fadeOut(tween(duration)),
+                        )
+                },
+                label = "seconds",
                 modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
-            )
+            ) { seconds ->
+                Text(text = seconds, style = TimerSecondsStyle, color = palette.textSecondary)
+            }
         }
 
         val caption: String? = when (state.phase) {

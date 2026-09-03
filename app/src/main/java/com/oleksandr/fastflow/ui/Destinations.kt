@@ -12,8 +12,12 @@ data object TimerRoute
 @Serializable
 data object HistoryRoute
 
+/**
+ * @param focusDateEpochDay day to open the calendar on, set when arriving from
+ *   the week strip on Home (SPEC 5.3).
+ */
 @Serializable
-data object StatsRoute
+data class StatsRoute(val focusDateEpochDay: Long? = null)
 
 @Serializable
 data object SettingsRoute
@@ -26,6 +30,6 @@ enum class TopLevelTab(
 ) {
     TIMER(TimerRoute, R.string.tab_timer, R.drawable.ic_tab_timer),
     HISTORY(HistoryRoute, R.string.tab_history, R.drawable.ic_tab_history),
-    STATS(StatsRoute, R.string.tab_stats, R.drawable.ic_tab_stats),
+    STATS(StatsRoute(), R.string.tab_stats, R.drawable.ic_tab_stats),
     SETTINGS(SettingsRoute, R.string.tab_settings, R.drawable.ic_tab_settings),
 }

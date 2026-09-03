@@ -60,6 +60,7 @@
     <string name="history_duration">Тривалість</string>
     <string name="history_goal">Ціль</string>
     <string name="history_compensated">виконано (компенсовано)</string>
+    <string name="day_no_fasts">Цього дня голодувань не було</string>
 
     <!-- Статистика -->
     <string name="stats_tab_overview">Огляд</string>
@@ -75,6 +76,7 @@
     <string name="stats_month">За місяць</string>
     <string name="stats_all_time">За весь час</string>
     <string name="stats_chart_title">Останні голодування</string>
+    <string name="stats_heatmap_title">Останні 12 тижнів</string>
     <string name="stats_empty">Дані з\'являться після першого голодування</string>
     <plurals name="stats_days">
         <item quantity="one">%d день</item>

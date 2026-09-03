@@ -36,6 +36,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.oleksandr.fastflow.ui.history.HistoryScreen
 import com.oleksandr.fastflow.ui.home.HomeScreen
 import com.oleksandr.fastflow.ui.onboarding.OnboardingScreen
@@ -44,6 +45,7 @@ import com.oleksandr.fastflow.ui.stats.StatsScreen
 import com.oleksandr.fastflow.ui.theme.AppTypography
 import com.oleksandr.fastflow.ui.theme.LocalAppPalette
 import com.oleksandr.fastflow.ui.theme.Motion
+import java.time.LocalDate
 
 @Composable
 fun FastFlowApp(
@@ -89,9 +91,21 @@ fun FastFlowApp(
             popEnterTransition = { fadeIn(fade) },
             popExitTransition = { fadeOut(fade) },
         ) {
-            composable<TimerRoute> { HomeScreen() }
+            composable<TimerRoute> {
+                HomeScreen(
+                    // Tapping a day in the week strip opens it in the calendar.
+                    onOpenDay = { date ->
+                        navController.navigate(StatsRoute(date.toEpochDay())) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
             composable<HistoryRoute> { HistoryScreen() }
-            composable<StatsRoute> { StatsScreen() }
+            composable<StatsRoute> { entry ->
+                val focusDay = entry.toRoute<StatsRoute>().focusDateEpochDay
+                StatsScreen(focusDate = focusDay?.let { LocalDate.ofEpochDay(it) })
+            }
             composable<SettingsRoute> { SettingsScreen() }
         }
     }

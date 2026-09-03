@@ -57,6 +57,9 @@ fun HistoryScreen(viewModel: HistoryViewModel = hiltViewModel()) {
     val palette = LocalAppPalette.current
     val snackbarHostState = remember { SnackbarHostState() }
     var pendingDelete by remember { mutableStateOf<Fast?>(null) }
+    var detail by remember { mutableStateOf<HistoryEntry?>(null) }
+    val zone = remember { ZoneId.systemDefault() }
+    val resolved24 = rememberUse24Hour(state.use24HourClock)
 
     val deletedLabel = stringResource(R.string.history_deleted)
     val undoLabel = stringResource(R.string.action_undo)
@@ -108,6 +111,7 @@ fun HistoryScreen(viewModel: HistoryViewModel = hiltViewModel()) {
                                 HistoryRow(
                                     entry = entry,
                                     use24Hour = state.use24HourClock,
+                                    onOpen = { detail = entry },
                                     onDelete = {
                                         viewModel.delete(entry.fast)
                                         pendingDelete = entry.fast
@@ -125,6 +129,26 @@ fun HistoryScreen(viewModel: HistoryViewModel = hiltViewModel()) {
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
+
+    val opened = detail
+    if (opened != null) {
+        FastDetailSheet(
+            fast = opened.fast,
+            outcome = opened.outcome,
+            zone = zone,
+            use24Hour = resolved24,
+            onSave = { updated ->
+                detail = null
+                viewModel.update(updated)
+            },
+            onDelete = {
+                detail = null
+                viewModel.delete(opened.fast)
+                pendingDelete = opened.fast
+            },
+            onDismiss = { detail = null },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -132,6 +156,7 @@ fun HistoryScreen(viewModel: HistoryViewModel = hiltViewModel()) {
 private fun HistoryRow(
     entry: HistoryEntry,
     use24Hour: Boolean?,
+    onOpen: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val palette = LocalAppPalette.current
@@ -169,7 +194,7 @@ private fun HistoryRow(
             }
         },
     ) {
-        GroupedRow(modifier = Modifier.background(palette.surface)) {
+        GroupedRow(modifier = Modifier.background(palette.surface), onClick = onOpen) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = ClockFormat.date(entry.fast.startMillis, zone),

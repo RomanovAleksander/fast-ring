@@ -1,6 +1,7 @@
 package com.oleksandr.fastflow.ui.stats
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -23,7 +24,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,9 +41,11 @@ import com.oleksandr.fastflow.R
 import com.oleksandr.fastflow.domain.logic.DurationFormat
 import com.oleksandr.fastflow.domain.model.FastOutcome
 import com.oleksandr.fastflow.ui.components.CalendarGrid
+import com.oleksandr.fastflow.ui.components.DayFastsSheet
 import com.oleksandr.fastflow.ui.components.DurationBar
 import com.oleksandr.fastflow.ui.components.DurationBarChart
 import com.oleksandr.fastflow.ui.components.GroupedDivider
+import com.oleksandr.fastflow.ui.components.Heatmap
 import com.oleksandr.fastflow.ui.components.GroupedRow
 import com.oleksandr.fastflow.ui.components.GroupedSection
 import com.oleksandr.fastflow.ui.components.SegmentedControl
@@ -50,14 +55,31 @@ import com.oleksandr.fastflow.ui.theme.LocalAppPalette
 import com.oleksandr.fastflow.ui.theme.Motion
 import com.oleksandr.fastflow.ui.theme.NumericStyle
 import com.oleksandr.fastflow.ui.theme.StatNumberStyle
+import com.oleksandr.fastflow.ui.util.rememberUse24Hour
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
+fun StatsScreen(
+    focusDate: LocalDate? = null,
+    viewModel: StatsViewModel = hiltViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val palette = LocalAppPalette.current
-    var tab by remember { mutableIntStateOf(0) }
+    var tab by remember { mutableIntStateOf(if (focusDate != null) CALENDAR_TAB else 0) }
+    var selectedDay by remember { mutableStateOf(focusDate) }
+
+    // Arriving from the week strip lands straight on that day in the calendar.
+    LaunchedEffect(focusDate) {
+        if (focusDate != null) {
+            viewModel.showMonth(YearMonth.from(focusDate))
+            tab = CALENDAR_TAB
+            selectedDay = focusDate
+        }
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -95,14 +117,36 @@ fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
                 },
                 label = "statsTab",
             ) { current ->
-                if (current == 0) Overview(state) else Calendar(state, viewModel)
+                if (current == 0) {
+                    Overview(state, onDayClick = { selectedDay = it })
+                } else {
+                    Calendar(state, viewModel, onDayClick = { selectedDay = it })
+                }
             }
         }
     }
 }
 
+    val day = selectedDay
+    if (day != null) {
+        val zone = remember { ZoneId.systemDefault() }
+        DayFastsSheet(
+            date = day,
+            // A fast counts for the day it overlaps, not only the one it started on.
+            entries = state.recent.filter { entry ->
+                entry.fast.coveredDates(state.nowMillis).contains(day)
+            },
+            zone = zone,
+            use24Hour = rememberUse24Hour(null),
+            onDismiss = { selectedDay = null },
+        )
+    }
+}
+
+private const val CALENDAR_TAB = 1
+
 @Composable
-private fun Overview(state: StatsUiState) {
+private fun Overview(state: StatsUiState, onDayClick: (LocalDate) -> Unit) {
     val palette = LocalAppPalette.current
 
     if (state.isEmpty) {
@@ -165,6 +209,16 @@ private fun Overview(state: StatsUiState) {
             )
         }
 
+        Column {
+            Text(
+                text = stringResource(R.string.stats_heatmap_title),
+                style = AppTypography.titleMedium,
+                color = palette.textPrimary,
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+            Heatmap(days = state.heatmap, today = state.today, onDayClick = onDayClick)
+        }
+
         val finished = state.recent.filter { it.outcome != FastOutcome.UNFINISHED }.take(30)
         if (finished.isNotEmpty()) {
             Column {
@@ -190,7 +244,11 @@ private fun Overview(state: StatsUiState) {
 }
 
 @Composable
-private fun Calendar(state: StatsUiState, viewModel: StatsViewModel) {
+private fun Calendar(
+    state: StatsUiState,
+    viewModel: StatsViewModel,
+    onDayClick: (LocalDate) -> Unit,
+) {
     val palette = LocalAppPalette.current
 
     Column {
@@ -214,6 +272,7 @@ private fun Calendar(state: StatsUiState, viewModel: StatsViewModel) {
             month = state.month,
             days = state.days,
             today = state.today,
+            onDayClick = onDayClick,
         )
     }
 }
@@ -238,13 +297,15 @@ private fun MonthArrow(glyph: String, onClick: () -> Unit) {
 @Composable
 private fun StatTile(label: String, value: Int, modifier: Modifier = Modifier) {
     val palette = LocalAppPalette.current
+    // Counts up from zero rather than snapping into place (SPEC 5.4).
+    val shown by animateIntAsState(targetValue = value, animationSpec = Motion.statCount, label = "stat")
     Column(
         modifier = modifier
             .clip(AppShapes.medium)
             .background(palette.surface)
             .padding(16.dp),
     ) {
-        Text(text = value.toString(), style = StatNumberStyle, color = palette.textPrimary)
+        Text(text = shown.toString(), style = StatNumberStyle, color = palette.textPrimary)
         Text(text = label, style = AppTypography.bodySmall, color = palette.textSecondary)
     }
 }

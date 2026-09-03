@@ -7,8 +7,11 @@ import com.oleksandr.fastflow.domain.logic.FastScoring
 import com.oleksandr.fastflow.domain.model.AppSettings
 import com.oleksandr.fastflow.domain.model.DayInfo
 import com.oleksandr.fastflow.domain.model.FastState
+import com.oleksandr.fastflow.domain.model.FastingPlan
 import com.oleksandr.fastflow.domain.model.Milestones
+import com.oleksandr.fastflow.domain.repository.AlarmScheduler
 import com.oleksandr.fastflow.domain.repository.FastRepository
+import com.oleksandr.fastflow.domain.repository.PlanRepository
 import com.oleksandr.fastflow.domain.repository.SettingsRepository
 import com.oleksandr.fastflow.domain.usecase.ComputeDayStatusesUseCase
 import com.oleksandr.fastflow.domain.usecase.EditFastUseCase
@@ -33,7 +36,9 @@ import kotlinx.coroutines.launch
 class HomeViewModel @Inject constructor(
     observeCurrentState: ObserveCurrentStateUseCase,
     computeDayStatuses: ComputeDayStatusesUseCase,
-    settingsRepository: SettingsRepository,
+    private val settingsRepository: SettingsRepository,
+    private val planRepository: PlanRepository,
+    private val alarmScheduler: AlarmScheduler,
     private val startFastUseCase: StartFastUseCase,
     private val endFastUseCase: EndFastUseCase,
     private val editFastUseCase: EditFastUseCase,
@@ -56,8 +61,9 @@ class HomeViewModel @Inject constructor(
         stateFlow,
         weekFlow,
         settingsRepository.observe(),
-    ) { state, week, settings ->
-        toUiState(state, week, settings)
+        planRepository.observeAll(),
+    ) { state, week, settings, plans ->
+        toUiState(state, week, settings).copy(plans = plans)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -70,6 +76,29 @@ class HomeViewModel @Inject constructor(
 
     fun endFast(endMillis: Long? = null) {
         viewModelScope.launch { endFastUseCase(endMillis = endMillis) }
+    }
+
+    fun selectPlan(id: String) {
+        viewModelScope.launch {
+            settingsRepository.setActivePlanId(id)
+            alarmScheduler.rescheduleAll()
+        }
+    }
+
+    fun createCustomPlan(fastingMinutes: Int, eatingMinutes: Int?) {
+        viewModelScope.launch {
+            val plan = FastingPlan(
+                id = FastingPlan.CUSTOM_ID,
+                name = FastingPlan.CUSTOM_ID,
+                fastingMinutes = fastingMinutes,
+                eatingMinutes = eatingMinutes,
+                isPreset = false,
+                sortOrder = Int.MAX_VALUE,
+            )
+            planRepository.upsert(plan)
+            settingsRepository.setActivePlanId(plan.id)
+            alarmScheduler.rescheduleAll()
+        }
     }
 
     /** Moves the running fast's start time ("I started at 20:00"). */

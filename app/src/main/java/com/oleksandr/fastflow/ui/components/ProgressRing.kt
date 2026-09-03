@@ -3,6 +3,7 @@ package com.oleksandr.fastflow.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -14,9 +15,12 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -47,6 +51,8 @@ fun DualProgressRing(
     innerColor: Color,
     showInnerRing: Boolean,
     modifier: Modifier = Modifier,
+    /** Drives the one-shot celebration when the goal lands (SPEC 5.2). */
+    goalReached: Boolean = false,
     animationsEnabled: Boolean = true,
     diameter: Dp = 300.dp,
     content: @Composable BoxScope.() -> Unit,
@@ -55,9 +61,25 @@ fun DualProgressRing(
 
     val animatedOuter by animateFloatAsState(
         targetValue = outerProgress.coerceIn(0f, 1f),
-        animationSpec = if (animationsEnabled) Motion.ringProgress else tween(0),
+        animationSpec = when {
+            !animationsEnabled -> tween(0)
+            // The ring snaps shut with a little overshoot when the goal lands.
+            goalReached -> Motion.goalOvershoot
+            else -> Motion.ringProgress
+        },
         label = "outerProgress",
     )
+
+    // One pulse on reaching the goal: scale out and spring back.
+    val pulse = remember { Animatable(1f) }
+    LaunchedEffect(goalReached, animationsEnabled) {
+        if (goalReached && animationsEnabled) {
+            pulse.animateTo(GOAL_PULSE_SCALE, tween(Motion.COLOR_SHIFT_MILLIS / 2))
+            pulse.animateTo(1f, Motion.goalOvershoot)
+        } else {
+            pulse.snapTo(1f)
+        }
+    }
     val animatedInner by animateFloatAsState(
         targetValue = innerProgress.coerceIn(0f, 1f),
         animationSpec = if (animationsEnabled) Motion.ringProgress else tween(0),
@@ -94,7 +116,7 @@ fun DualProgressRing(
     )
 
     Box(modifier = modifier.size(diameter), contentAlignment = Alignment.Center) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
+        Canvas(modifier = Modifier.fillMaxSize().scale(pulse.value)) {
             val outerStroke = (if (showInnerRing) OUTER_STROKE_DP else EXTENDED_STROKE_DP).dp.toPx()
             val innerStroke = INNER_STROKE_DP.dp.toPx()
             val gap = RING_GAP_DP.dp.toPx()
@@ -109,6 +131,8 @@ fun DualProgressRing(
                 color = animatedOuterColor,
                 gradientEnd = palette.fastingGradientEnd,
                 shimmerAngle = if (animationsEnabled) shimmerAngle else null,
+                // The glow widens as the ring closes, so the moment reads.
+                glowScale = pulse.value,
             )
             drawTicks(outerRadius, outerStroke, animatedOuter, animatedOuterColor, palette)
 
@@ -135,6 +159,7 @@ private fun DrawScope.drawRing(
     color: Color,
     gradientEnd: Color,
     shimmerAngle: Float?,
+    glowScale: Float = 1f,
 ) {
     val stroke = Stroke(width = strokeWidth, cap = StrokeCap.Round)
     val topLeft = Offset(center.x - radius, center.y - radius)
@@ -165,7 +190,8 @@ private fun DrawScope.drawRing(
 
     if (progress <= 0f) return
 
-    val sweep = progress * 360f
+    // A spring can overshoot past full; the drawn arc stops at a whole turn.
+    val sweep = (progress * 360f).coerceAtMost(360f)
     drawArc(
         brush = Brush.sweepGradient(
             listOf(color, gradientEnd, color),
@@ -185,13 +211,14 @@ private fun DrawScope.drawRing(
         x = center.x + radius * cos(headRadians).toFloat(),
         y = center.y + radius * sin(headRadians).toFloat(),
     )
+    val glowRadius = strokeWidth * GLOW_RADIUS_FACTOR * glowScale
     drawCircle(
         brush = Brush.radialGradient(
             colors = listOf(color.copy(alpha = AppPalette.GLOW_ALPHA), Color.Transparent),
             center = head,
-            radius = strokeWidth * GLOW_RADIUS_FACTOR,
+            radius = glowRadius,
         ),
-        radius = strokeWidth * GLOW_RADIUS_FACTOR,
+        radius = glowRadius,
         center = head,
     )
 }
@@ -238,3 +265,4 @@ private const val TICK_WIDTH_DP = 1
 private const val SHIMMER_ALPHA = 0.08f
 private const val SHIMMER_SWEEP_DEGREES = 26f
 private const val GLOW_RADIUS_FACTOR = 1.6f
+private const val GOAL_PULSE_SCALE = 1.04f

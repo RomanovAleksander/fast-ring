@@ -44,6 +44,7 @@ data class HomeUiState(
     val nowMillis: Long = 0L,
 
     val week: List<DayInfo> = emptyList(),
+    val plans: List<FastingPlan> = emptyList(),
     val use24HourClock: Boolean? = null,
 ) {
     val isExtended: Boolean get() = planEatingMinutes == null
