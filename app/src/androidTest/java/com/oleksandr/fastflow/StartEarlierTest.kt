@@ -1,10 +1,13 @@
 package com.oleksandr.fastflow
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.printToString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Before
 import org.junit.Rule
@@ -26,9 +29,25 @@ class StartEarlierTest {
     private fun isShowing(id: Int): Boolean =
         composeRule.onAllNodesWithText(text(id)).fetchSemanticsNodes().isNotEmpty()
 
+    /** Asserted before the tap, so a row that fell off the screen says so. */
     private fun tap(id: Int) {
-        composeRule.onAllNodesWithText(text(id)).onFirst().performClick()
+        val node = composeRule.onAllNodesWithText(text(id)).onFirst()
+        node.assertIsDisplayed()
+        node.performClick()
         composeRule.waitForIdle()
+    }
+
+    /** Rethrows a timeout with the semantics tree, which says what *is* on screen. */
+    private fun await(id: Int) {
+        try {
+            composeRule.waitUntil(timeoutMillis = 5_000) { isShowing(id) }
+        } catch (timeout: Throwable) {
+            throw AssertionError(
+                "Never saw \"${text(id)}\". Semantics tree:\n" +
+                    composeRule.onRoot().printToString(maxDepth = 6),
+                timeout,
+            )
+        }
     }
 
     @Before
@@ -37,16 +56,16 @@ class StartEarlierTest {
             composeRule.onNodeWithText(text(R.string.action_next)).performClick()
             composeRule.onNodeWithText(text(R.string.action_done)).performClick()
         }
-        composeRule.waitUntil(timeoutMillis = 5_000) { isShowing(R.string.action_start) }
+        await(R.string.action_start)
     }
 
     @Test
     fun theStartTimeCanBePickedBeforeStarting() {
         tap(R.string.action_start_earlier)
-        composeRule.waitUntil(timeoutMillis = 5_000) { isShowing(R.string.home_start_at) }
+        await(R.string.home_start_at)
 
         // Cancelling starts nothing, so the timer tab is untouched afterwards.
         tap(R.string.action_cancel)
-        composeRule.waitUntil(timeoutMillis = 5_000) { isShowing(R.string.action_start_earlier) }
+        await(R.string.action_start_earlier)
     }
 }

@@ -2,6 +2,7 @@ package com.oleksandr.fastflow.ui.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -202,28 +203,42 @@ private fun HomeContent(
 
         Spacer(Modifier.height(24.dp))
 
-        DualProgressRing(
-            outerProgress = state.outerProgress,
-            outerColor = when (state.phase) {
-                HomePhase.FASTING, HomePhase.IDLE -> palette.fasting
-                // Paused reads as switched off, so even the empty track dims.
-                HomePhase.PAUSED -> palette.textTertiary
-                HomePhase.OVERTIME -> palette.success
-                // Ended short of the goal: the ring stays partial-coloured.
-                HomePhase.EATING ->
-                    if (state.previousFastEarnedDay) palette.success else palette.partial
-            },
-            innerProgress = state.innerProgress,
-            innerColor = when (state.phase) {
-                HomePhase.OVERTIME -> palette.success
-                else -> palette.eating
-            },
-            showInnerRing = state.showInnerRing,
-            goalReached = state.phase == HomePhase.OVERTIME ||
-                (state.phase == HomePhase.EATING && state.previousFastEarnedDay),
-            animationsEnabled = animationsEnabled,
+        // The ring absorbs whatever height is left over and shrinks when there
+        // is not enough: at a fixed 300dp the column overflowed on a 731dp
+        // screen and pushed the last action underneath the tab bar, where it
+        // could still be seen but no longer tapped.
+        BoxWithConstraints(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center,
         ) {
-            RingCenter(state = state)
+            DualProgressRing(
+                // Bounded by both axes: a short screen and a narrow one
+                // each have to be able to shrink it.
+                diameter = minOf(RING_MAX_DIAMETER, maxHeight, maxWidth),
+                outerProgress = state.outerProgress,
+                outerColor = when (state.phase) {
+                    HomePhase.FASTING, HomePhase.IDLE -> palette.fasting
+                    // Paused reads as switched off, so even the empty track dims.
+                    HomePhase.PAUSED -> palette.textTertiary
+                    HomePhase.OVERTIME -> palette.success
+                    // Ended short of the goal: the ring stays partial-coloured.
+                    HomePhase.EATING ->
+                        if (state.previousFastEarnedDay) palette.success else palette.partial
+                },
+                innerProgress = state.innerProgress,
+                innerColor = when (state.phase) {
+                    HomePhase.OVERTIME -> palette.success
+                    else -> palette.eating
+                },
+                showInnerRing = state.showInnerRing,
+                goalReached = state.phase == HomePhase.OVERTIME ||
+                    (state.phase == HomePhase.EATING && state.previousFastEarnedDay),
+                animationsEnabled = animationsEnabled,
+            ) {
+                RingCenter(state = state)
+            }
         }
 
         Spacer(Modifier.height(16.dp))
@@ -272,7 +287,7 @@ private fun HomeContent(
             onDayClick = onOpenDay,
         )
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(24.dp))
 
         when (state.phase) {
             HomePhase.IDLE, HomePhase.PAUSED -> CapsuleButton(
@@ -329,6 +344,9 @@ private fun HomeContent(
         Spacer(Modifier.height(16.dp))
     }
 }
+
+/** As large as SPEC 5.2 asks for, where the screen has room for it. */
+private val RING_MAX_DIAMETER = 300.dp
 
 /** The quiet secondary choice under the capsule: text only, no chrome. */
 @Composable
