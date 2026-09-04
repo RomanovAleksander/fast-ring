@@ -8,6 +8,7 @@ enum class FastEditError {
     START_TOO_FAR_BACK,
     END_BEFORE_START,
     END_IN_FUTURE,
+    OVERLAPS_PREVIOUS,
 }
 
 sealed interface FastEditResult {
@@ -20,10 +21,19 @@ sealed interface FastEditResult {
  *
  * A start may not be in the future and may not be dragged back more than
  * [Fast.MAX_BACKDATE_DAYS] days (SPEC 7, case 11).
+ *
+ * @param earliestStartMillis when the previous fast ended, where one exists.
+ *   Backdating past it would leave two fasts covering the same hours, which
+ *   the totals would double-count and the compensation rule would read as an
+ *   instant restart.
  */
 object FastEditValidator {
 
-    fun validate(fast: Fast, nowMillis: Long): FastEditResult {
+    fun validate(
+        fast: Fast,
+        nowMillis: Long,
+        earliestStartMillis: Long? = null,
+    ): FastEditResult {
         val earliestStart = nowMillis - Fast.MAX_BACKDATE_DAYS * 24 * 60 * 60 * 1000L
 
         if (fast.startMillis > nowMillis) {
@@ -31,6 +41,9 @@ object FastEditValidator {
         }
         if (fast.startMillis < earliestStart) {
             return FastEditResult.Invalid(FastEditError.START_TOO_FAR_BACK)
+        }
+        if (earliestStartMillis != null && fast.startMillis < earliestStartMillis) {
+            return FastEditResult.Invalid(FastEditError.OVERLAPS_PREVIOUS)
         }
 
         val end = fast.endMillis

@@ -63,6 +63,9 @@ fun HomeScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showStopConfirmation by remember { mutableStateOf(false) }
     var showStartEditor by remember { mutableStateOf(false) }
+    // Holds the moment the sheet was opened, so the one-second tick underneath
+    // cannot move the dial while it is being read.
+    var startPickerSeed by remember { mutableStateOf<Long?>(null) }
     var showPlanPicker by remember { mutableStateOf(false) }
 
     val zone = rememberZoneId()
@@ -77,7 +80,25 @@ fun HomeScreen(
         onOpenPlans = { showPlanPicker = true },
         onOpenDay = onOpenDay,
         onSetPaused = viewModel::setPaused,
+        onStartEarlier = { startPickerSeed = state.nowMillis },
     )
+
+    val pickerSeed = startPickerSeed
+    if (pickerSeed != null) {
+        EditStartSheet(
+            currentStartMillis = pickerSeed,
+            nowMillis = state.nowMillis,
+            zone = zone,
+            use24Hour = use24Hour,
+            title = stringResource(R.string.home_start_at),
+            earliestMillis = state.earliestStartMillis,
+            onConfirm = { millis ->
+                startPickerSeed = null
+                viewModel.startFast(millis)
+            },
+            onDismiss = { startPickerSeed = null },
+        )
+    }
 
     if (showPlanPicker) {
         PlanPickerSheet(
@@ -116,6 +137,7 @@ fun HomeScreen(
             nowMillis = state.nowMillis,
             zone = zone,
             use24Hour = use24Hour,
+            earliestMillis = state.earliestStartMillis,
             onConfirm = { millis ->
                 showStartEditor = false
                 viewModel.editStart(millis)
@@ -134,6 +156,7 @@ private fun HomeContent(
     onOpenPlans: () -> Unit,
     onOpenDay: (LocalDate) -> Unit,
     onSetPaused: (Boolean) -> Unit,
+    onStartEarlier: () -> Unit,
 ) {
     val palette = LocalAppPalette.current
     val animationsEnabled = rememberAnimationsEnabled()
@@ -270,6 +293,20 @@ private fun HomeContent(
                 onClick = onStart,
                 style = CapsuleStyle.TINTED,
                 accent = palette.eating,
+            )
+        }
+
+        // A fast usually begins before anyone thinks to press a button — the
+        // last meal, not the moment of remembering. Offered wherever the next
+        // fast has yet to start; during one, the start row above edits it.
+        val canBackdateStart = when (state.phase) {
+            HomePhase.IDLE, HomePhase.PAUSED, HomePhase.EATING -> true
+            HomePhase.FASTING, HomePhase.OVERTIME -> false
+        }
+        if (canBackdateStart) {
+            TextAction(
+                text = stringResource(R.string.action_start_earlier),
+                onClick = onStartEarlier,
             )
         }
 

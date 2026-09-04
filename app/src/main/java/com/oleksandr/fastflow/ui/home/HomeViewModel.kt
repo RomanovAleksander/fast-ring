@@ -69,6 +69,10 @@ class HomeViewModel @Inject constructor(
         computeStreak(),
     ) { state, week, settings, plans, streak ->
         toUiState(state, week, settings).copy(plans = plans, currentStreak = streak.current)
+    }.combine(fastRepository.observeLastFinished()) { ui, lastFinished ->
+        // Nested rather than folded into the combine above: that one is already
+        // at the five-flow limit of the typed overload.
+        ui.copy(earliestStartMillis = lastFinished?.endMillis)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),

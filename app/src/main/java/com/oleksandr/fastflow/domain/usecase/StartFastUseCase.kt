@@ -60,7 +60,10 @@ class StartFastUseCase @Inject constructor(
             updatedAt = now,
         )
 
-        return when (val validation = FastEditValidator.validate(candidate, now)) {
+        // A backdated start must still land after the previous fast finished.
+        val previousEnd = fastRepository.getLastFinished()?.endMillis
+
+        return when (val validation = FastEditValidator.validate(candidate, now, previousEnd)) {
             is FastEditResult.Invalid -> StartFastResult.InvalidTime(validation.error)
             is FastEditResult.Valid -> {
                 val id = fastRepository.insert(validation.fast)

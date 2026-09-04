@@ -36,6 +36,12 @@ import java.time.ZoneId
  *
  * Offers today or yesterday rather than a full date picker: the start may not
  * be in the future, and in practice it is one of those two days.
+ *
+ * @param title what the sheet is for: correcting a running fast's start, or
+ *   naming the moment a new one really began.
+ * @param earliestMillis when the previous fast ended, if there is one. A start
+ *   before it would overlap two fasts, which the totals and the day statuses
+ *   have no way to read sensibly.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +52,8 @@ fun EditStartSheet(
     use24Hour: Boolean,
     onConfirm: (Long) -> Unit,
     onDismiss: () -> Unit,
+    title: String = stringResource(R.string.home_edit_start),
+    earliestMillis: Long? = null,
 ) {
     val palette = LocalAppPalette.current
     val startDateTime = remember(currentStartMillis) {
@@ -78,7 +86,7 @@ fun EditStartSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = stringResource(R.string.home_edit_start),
+                text = title,
                 style = AppTypography.headlineSmall,
                 color = palette.textPrimary,
             )
@@ -106,18 +114,33 @@ fun EditStartSheet(
                 ),
             )
 
+            // Recomputed as the dial turns, so an impossible time is refused
+            // before it is tapped rather than swallowed by the validator after.
+            val chosen = run {
+                val date = if (dayIndex == 0) today else today.minusDays(1)
+                date.atTime(LocalTime.of(timeState.hour, timeState.minute))
+                    .atZone(zone)
+                    .toInstant()
+                    .toEpochMilli()
+            }
+            val refusal: Int? = when {
+                chosen > nowMillis -> R.string.edit_start_future
+                earliestMillis != null && chosen < earliestMillis -> R.string.edit_start_before_previous
+                else -> null
+            }
+            if (refusal != null) {
+                Text(
+                    text = stringResource(refusal),
+                    style = AppTypography.bodyMedium,
+                    color = palette.partial,
+                )
+            }
+
             CapsuleButton(
                 text = stringResource(R.string.action_save),
-                onClick = {
-                    val date = if (dayIndex == 0) today else today.minusDays(1)
-                    val chosen = date
-                        .atTime(LocalTime.of(timeState.hour, timeState.minute))
-                        .atZone(zone)
-                        .toInstant()
-                        .toEpochMilli()
-                    onConfirm(chosen)
-                },
+                onClick = { onConfirm(chosen) },
                 style = CapsuleStyle.FILLED,
+                enabled = refusal == null,
             )
             CapsuleButton(
                 text = stringResource(R.string.action_cancel),

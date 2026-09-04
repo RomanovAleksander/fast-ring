@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -74,6 +75,9 @@ fun CapsuleButton(
             .fillMaxWidth()
             .height(50.dp)
             .scale(scale)
+            // A button that ignores taps has to look like it will: without
+            // this, a refused choice reads as a broken one.
+            .alpha(if (enabled) 1f else DISABLED_ALPHA)
             .background(color = background, shape = CapsuleShape)
             .clickable(
                 interactionSource = interactionSource,
@@ -86,3 +90,5 @@ fun CapsuleButton(
         Text(text = text, style = AppTypography.titleMedium, color = contentColor)
     }
 }
+
+private const val DISABLED_ALPHA = 0.4f

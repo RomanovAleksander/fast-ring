@@ -42,6 +42,11 @@ data class HomeUiState(
      */
     val stopEarlyDeadlineMillis: Long? = null,
     val nowMillis: Long = 0L,
+    /**
+     * When the previous fast ended. A new start may not be dragged before it,
+     * since two overlapping fasts have no sensible reading.
+     */
+    val earliestStartMillis: Long? = null,
 
     val week: List<DayInfo> = emptyList(),
     val plans: List<FastingPlan> = emptyList(),

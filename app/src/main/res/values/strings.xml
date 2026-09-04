@@ -26,6 +26,7 @@
     <string name="action_start_fasting">Почати голодування</string>
     <string name="action_pause">Пауза</string>
     <string name="action_resume_tracking">Відновити трекінг</string>
+    <string name="action_start_earlier">Почати з іншого часу</string>
     <string name="action_cancel">Скасувати</string>
     <string name="action_save">Зберегти</string>
     <string name="action_delete">Видалити</string>
@@ -44,6 +45,9 @@
     <string name="home_credit_hint">почни до %1$s, щоб зарахувати день</string>
     <string name="home_window_range">%1$s → %2$s</string>
     <string name="home_edit_start">Змінити час початку</string>
+    <string name="home_start_at">Коли почалося голодування</string>
+    <string name="edit_start_future">Цей час ще не настав</string>
+    <string name="edit_start_before_previous">Раніше за кінець попереднього голодування</string>
     <string name="edit_start_today">Сьогодні</string>
     <string name="edit_start_yesterday">Учора</string>
     <string name="home_tomorrow">Завтра</string>
