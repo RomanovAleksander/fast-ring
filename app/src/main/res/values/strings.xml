@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FastFlow</string>
+
+    <!-- Нижня навігація -->
+    <string name="tab_timer">Таймер</string>
+    <string name="tab_history">Історія</string>
+    <string name="tab_stats">Статистика</string>
+    <string name="tab_settings">Налаштування</string>
+
+    <!-- Заголовки екранів -->
+    <string name="screen_history_title">Історія</string>
+    <string name="screen_stats_title">Статистика</string>
+    <string name="screen_settings_title">Налаштування</string>
+    <string name="screen_plans_title">План голодування</string>
+
+    <!-- Стани головного екрана -->
+    <string name="state_fasting">ГОЛОДУВАННЯ</string>
+    <string name="state_eating">ВІКНО ЇЖІ</string>
+    <string name="state_idle">ГОТОВИЙ</string>
+    <string name="state_paused">НА ПАУЗІ</string>
+
+    <!-- Кнопки -->
+    <string name="action_start">Почати</string>
+    <string name="action_stop">Завершити</string>
+    <string name="action_start_fasting">Почати голодування</string>
+    <string name="action_pause">Пауза</string>
+    <string name="action_resume_tracking">Відновити трекінг</string>
+    <string name="action_start_earlier">Почати з іншого часу</string>
+    <string name="action_cancel">Скасувати</string>
+    <string name="action_save">Зберегти</string>
+    <string name="action_delete">Видалити</string>
+    <string name="action_undo">Повернути</string>
+    <string name="action_edit">Змінити</string>
+    <string name="action_next">Далі</string>
+    <string name="action_done">Готово</string>
+    <string name="action_open_settings">Відкрити налаштування</string>
+
+    <!-- Головний екран -->
+    <string name="home_remaining">залишилось %1$s</string>
+    <string name="home_until_food">до їжі %1$s</string>
+    <string name="home_eating_window">вікно їжі: %1$s</string>
+    <string name="home_paused_hint">трекінг зупинено, нагадувань не буде</string>
+    <string name="home_overtime">+%1$s</string>
+    <string name="home_credit_hint">почни до %1$s, щоб зарахувати день</string>
+    <string name="home_window_range">%1$s → %2$s</string>
+    <string name="home_edit_start">Змінити час початку</string>
+    <string name="home_start_at">Коли почалося голодування</string>
+    <string name="edit_start_future">Цей час ще не настав</string>
+    <string name="edit_start_before_previous">Раніше за кінець попереднього голодування</string>
+    <string name="edit_start_today">Сьогодні</string>
+    <string name="edit_start_yesterday">Учора</string>
+    <string name="home_tomorrow">Завтра</string>
+    <string name="home_streak_caption">поспіль</string>
+    <string name="home_change_plan">Змінити план</string>
+
+    <!-- Дострокове завершення -->
+    <string name="stop_early_title">Завершити достроково?</string>
+    <string name="stop_early_progress">Виконано %1$d%%</string>
+    <string name="stop_early_threshold">Зарахується, якщо ≥ 90%%</string>
+    <string name="stop_early_compensate">Щоб зарахувати день, почни наступне голодування до %1$s</string>
+    <string name="stop_early_confirm">Завершити</string>
+
+    <!-- Історія -->
+    <string name="history_empty">Ще немає жодного голодування</string>
+    <string name="history_deleted">Запис видалено</string>
+    <string name="history_detail_title">Голодування</string>
+    <string name="history_start">Початок</string>
+    <string name="history_end">Завершення</string>
+    <string name="history_duration">Тривалість</string>
+    <string name="history_goal">Ціль</string>
+    <string name="history_compensated">виконано (компенсовано)</string>
+    <string name="day_no_fasts">Цього дня голодувань не було</string>
+
+    <!-- Статистика -->
+    <string name="stats_tab_overview">Огляд</string>
+    <string name="stats_tab_calendar">Календар</string>
+    <string name="stats_current_streak">Поточний стрік</string>
+    <string name="stats_longest_streak">Найдовший</string>
+    <string name="stats_total_fasts">Усього голодувань</string>
+    <string name="stats_successful">Успішних</string>
+    <string name="stats_ended_early">Завершено достроково</string>
+    <string name="stats_average">Середня тривалість</string>
+    <string name="stats_longest">Найдовше голодування</string>
+    <string name="stats_week">За тиждень</string>
+    <string name="stats_month">За місяць</string>
+    <string name="stats_all_time">За весь час</string>
+    <string name="stats_chart_title">Останні голодування</string>
+    <string name="stats_heatmap_title">Останні 12 тижнів</string>
+    <string name="stats_empty">Дані з\'являться після першого голодування</string>
+    <plurals name="stats_days">
+        <item quantity="one">%d день</item>
+        <item quantity="few">%d дні</item>
+        <item quantity="many">%d днів</item>
+        <item quantity="other">%d днів</item>
+    </plurals>
+
+    <!-- Дні тижня, короткі -->
+    <string name="weekday_mon">Пн</string>
+    <string name="weekday_tue">Вт</string>
+    <string name="weekday_wed">Ср</string>
+    <string name="weekday_thu">Чт</string>
+    <string name="weekday_fri">Пт</string>
+    <string name="weekday_sat">Сб</string>
+    <string name="weekday_sun">Нд</string>
+
+    <!-- Плани -->
+    <string name="plan_extended_hours">%1$s год</string>
+    <string name="plan_custom">Свій</string>
+    <string name="plan_custom_editor_title">Свій план</string>
+    <string name="plan_fasting_hours">Голодування</string>
+    <string name="plan_eating_hours">Вікно їжі</string>
+    <string name="plan_no_eating_window">Без вікна їжі</string>
+
+    <!-- Налаштування -->
+    <string name="settings_section_plan">Голодування</string>
+    <string name="settings_active_plan">Активний план</string>
+    <string name="settings_auto_start">Автостарт наступного</string>
+    <string name="settings_auto_start_footer">Наступне голодування почнеться саме, щойно закриється вікно їжі.</string>
+    <string name="settings_section_reminders">Нагадування</string>
+    <string name="settings_eating_end_reminder">До кінця вікна їжі</string>
+    <string name="settings_daily_reminder">Щоденне нагадування</string>
+    <string name="settings_milestones">Етапи голодування</string>
+    <string name="settings_milestones_footer">Сповіщення на 16, 24, 36, 48 і 72 годинах.</string>
+    <string name="settings_section_appearance">Вигляд</string>
+    <string name="settings_palette_mint">М\'ята</string>
+    <string name="settings_palette_system">Системна</string>
+    <string name="settings_section_data">Дані</string>
+    <string name="settings_export_csv">Експорт у CSV</string>
+    <string name="settings_export_json">Експорт у JSON</string>
+    <string name="settings_import_json">Імпорт з JSON</string>
+    <string name="settings_section_permissions">Дозволи</string>
+    <string name="settings_perm_notifications">Сповіщення</string>
+    <string name="settings_perm_exact_alarms">Точні будильники</string>
+    <string name="settings_perm_battery">Оптимізація батареї</string>
+    <string name="settings_perm_granted">дозволено</string>
+    <string name="settings_perm_denied">заборонено</string>
+    <string name="settings_time_format">Формат часу</string>
+    <string name="settings_time_format_system">Системний</string>
+    <string name="settings_time_format_24">24 години</string>
+    <string name="settings_time_format_12">12 годин</string>
+    <string name="settings_off">Вимкнено</string>
+    <string name="settings_minutes_before">за %1$d хв</string>
+
+    <!-- Сповіщення: канали -->
+    <string name="channel_ongoing_name">Активне голодування</string>
+    <string name="channel_ongoing_desc">Постійне сповіщення з таймером</string>
+    <string name="channel_events_name">Події голодування</string>
+    <string name="channel_events_desc">Ціль досягнута, вікно їжі відкрилось або закрилось</string>
+    <string name="channel_reminders_name">Нагадування</string>
+    <string name="channel_reminders_desc">Нагадування про початок і кінець вікна їжі</string>
+
+    <!-- Сповіщення: тексти -->
+    <string name="notif_ongoing_title">Голодування триває</string>
+    <string name="notif_ongoing_overtime">Ціль досягнута ✓</string>
+    <string name="notif_ongoing_detail">%1$s · +%2$s · до %3$s ще %4$s</string>
+    <string name="notif_target_title">Ціль досягнута</string>
+    <string name="notif_target_text">Голодування %1$s завершено. Можеш зупинити таймер або продовжити.</string>
+    <string name="notif_milestone_title">Пройдено %1$s</string>
+    <string name="notif_milestone_text">Голодування триває.</string>
+    <string name="notif_eating_soon_title">Вікно їжі скоро закриється</string>
+    <string name="notif_eating_soon_text">Залишилось %1$s.</string>
+    <string name="notif_eating_ended_title">Час починати голодування</string>
+    <string name="notif_eating_ended_text">Вікно їжі закрилось.</string>
+    <string name="notif_daily_title">Не забудь про голодування</string>
+    <string name="notif_daily_text">Сьогодні ще нічого не почато.</string>
+    <string name="notif_still_fasting_title">Ти ще голодуєш?</string>
+    <string name="notif_still_fasting_text">Минуло вдвічі більше за ціль. Завершити?</string>
+    <string name="notif_action_stop">Завершити</string>
+    <string name="notif_action_start">Почати зараз</string>
+
+    <!-- Онбординг -->
+    <string name="onboarding_1_title">Голодування без зусиль</string>
+    <string name="onboarding_1_body">Один тап, щоб почати. Кільце покаже, скільки лишилось до цілі.</string>
+    <string name="onboarding_2_title">Сповіщення, що спрацюють</string>
+    <string name="onboarding_2_body">Дозволь сповіщення — таймер на 36 годин має спрацювати навіть із вимкненим екраном.</string>
+    <string name="onboarding_2_action">Дозволити сповіщення</string>
+    <string name="onboarding_3_title">Не дай системі приспати застосунок</string>
+    <string name="onboarding_3_body">Samsung може вимикати фонові процеси. Виключи FastFlow з оптимізації батареї, щоб нагадування приходили вчасно.</string>
+    <string name="onboarding_3_action">Відкрити налаштування батареї</string>
+
+    <!-- Банер про точні будильники -->
+    <string name="banner_exact_alarms_title">Точні будильники вимкнено</string>
+    <string name="banner_exact_alarms_body">Без них сповіщення можуть запізнюватись. Увімкни їх у налаштуваннях системи.</string>
+
+    <!-- Віджет -->
+    <string name="widget_description">Таймер голодування</string>
+    <string name="widget_small_description">Кільце голодування (1×1)</string>
+    <string name="widget_idle">Готовий</string>
+</resources>
