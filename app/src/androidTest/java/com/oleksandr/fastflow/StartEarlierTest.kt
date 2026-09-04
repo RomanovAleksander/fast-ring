@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.printToString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Before
@@ -64,8 +65,12 @@ class StartEarlierTest {
         tap(R.string.action_start_earlier)
         await(R.string.home_start_at)
 
-        // Cancelling starts nothing, so the timer tab is untouched afterwards.
-        tap(R.string.action_cancel)
+        // Scrolled to first: on a short screen the sheet's buttons sit below
+        // the clock dial, which is exactly why the sheet scrolls at all.
+        composeRule.onNodeWithText(text(R.string.action_cancel))
+            .performScrollTo()
+            .performClick()
+        composeRule.waitForIdle()
         await(R.string.action_start_earlier)
     }
 }
