@@ -37,6 +37,19 @@ android {
     }
 
     signingConfigs {
+        // Committed on purpose. Without a fixed debug key every CI machine
+        // generates its own, so each build carries a different signature,
+        // Android refuses to update the installed app, and the only way in is
+        // an uninstall — which takes the database and the settings with it.
+        // A debug key signs nothing that ships; the release key stays out of
+        // the repo, in keystore.properties.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+
         if (keystorePropertiesFile.exists()) {
             create("release") {
                 storeFile = file(keystoreProperties.getProperty("storeFile"))
@@ -52,6 +65,9 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             isMinifyEnabled = false
+            // Stated rather than inherited, so it is obvious that debug builds
+            // are signed with the checked-in key and stay update-compatible.
+            signingConfig = signingConfigs.getByName("debug")
         }
         release {
             isMinifyEnabled = true

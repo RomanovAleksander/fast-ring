@@ -13,3 +13,6 @@ captures/
 keystore.properties
 *.jks
 *.keystore
+# ...except the debug key, which has to be identical on every machine or each
+# build gets a different signature and updates stop installing over the top.
+!app/debug.keystore
